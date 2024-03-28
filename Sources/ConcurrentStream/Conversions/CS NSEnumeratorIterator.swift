@@ -14,7 +14,6 @@ private struct ConcurrentStreamNSEnumeratorIterator<Element>: ConcurrentStreamIt
     
     private var iterator: NSEnumerator
     
-    var isRawIterator: Bool { false }
     
     fileprivate mutating func next() async -> Element? {
         self.iterator.nextObject() as? Element

@@ -17,9 +17,6 @@ internal final class ConcurrentStreamShuffledIterator<Stream>: ConcurrentStreamI
     private var _block: Stream.SourceIterator
     
     @usableFromInline
-    var isRawIterator: Bool { true }
-    
-    @usableFromInline
     internal init(stream: Stream) async {
         self._block = stream.source
         self.base = AsyncThrowingStream(Word.self) { continuation in

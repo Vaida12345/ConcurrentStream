@@ -13,9 +13,6 @@ private struct ConcurrentStreamSerializedIterator<Element>: ConcurrentStreamIter
     
     private var rhs: any ConcurrentStreamIterator<Element>
     
-    @usableFromInline
-    var isRawIterator: Bool { true }
-    
     
     fileprivate mutating func next() async throws -> Element? {
         if let lhs = try await lhs.next() { return lhs }

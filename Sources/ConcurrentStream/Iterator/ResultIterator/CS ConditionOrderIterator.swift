@@ -11,8 +11,6 @@ private struct ConcurrentStreamConditionalOrderIterator<Stream>: ConcurrentStrea
     
     private var iterator: any ConcurrentStreamIterator<Element>
     
-    var isRawIterator: Bool { false }
-    
     
     fileprivate mutating func next() async rethrows -> Element? {
         try await iterator.next()

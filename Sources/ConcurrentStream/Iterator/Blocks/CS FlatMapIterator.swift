@@ -17,9 +17,6 @@ internal struct ConcurrentFlatMapStreamIterator<SourceIterator, SegmentOfResult>
     
     private var currentProvider: SegmentOfResult.Iterator? = nil
     
-    @usableFromInline
-    var isRawIterator: Bool { false }
-    
     
     // MARK: - Computed Instance Properties
     

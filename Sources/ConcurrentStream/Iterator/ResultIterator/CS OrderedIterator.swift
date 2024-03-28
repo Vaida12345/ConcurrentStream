@@ -23,37 +23,36 @@ internal final class ConcurrentStreamOrderedIterator<Stream>: ConcurrentStreamIt
     
     private var _block: Stream.SourceIterator
     
-    @usableFromInline
-    var isRawIterator: Bool { true }
-    
     
     @usableFromInline
     internal init(stream: Stream) async {
         self._block = stream.source
-        self.base = AsyncThrowingStream(Word.self) { continuation in
-            self.task = Task {
-                do {
-                    try await withThrowingTaskGroup(of: Void.self) { group in
-                        var count = 0
-                        while let value = try await _block.next() {
-                            let _count = count
-                            
-                            group.addTask(priority: .medium) {
-                                let next = try await (_count, stream.build(source: value))
-                                continuation.yield(next)
-                            }
-                            
-                            count &+= 1
+        let (_stream, continuation) = AsyncThrowingStream.makeStream(of: Word.self)
+        self.base = _stream.makeAsyncIterator()
+        
+        self.task = Task {
+            do {
+                try await withThrowingTaskGroup(of: Void.self) { group in
+                    var count = 0
+                    while let value = try await _block.next() {
+                        let _count = count
+                        
+                        group.addTask {
+                            try Task.checkCancellation()
+                            let next = try await (_count, stream.build(source: value))
+                            continuation.yield(next)
                         }
                         
-                        try await group.waitForAll()
-                        continuation.finish()
+                        count &+= 1
                     }
-                } catch {
-                    continuation.finish(throwing: error)
+                    
+                    try await group.waitForAll()
+                    continuation.finish()
                 }
+            } catch {
+                continuation.finish(throwing: error)
             }
-        }.makeAsyncIterator()
+        }
     }
     
     /// Access the next element in the stream. `wait`ing is built-in.

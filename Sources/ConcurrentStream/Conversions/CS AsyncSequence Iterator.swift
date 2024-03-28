@@ -1,5 +1,5 @@
 //
-//  ConcurrentStream Sequence Iterator.swift
+//  ConcurrentStream AsyncSequence Iterator.swift
 //  The Stratum Module - Concurrent Stream
 //
 //  Created by Vaida on 6/1/23.
@@ -7,15 +7,13 @@
 //
 
 
-private struct ConcurrentStreamSequenceIterator<Iterator>: ConcurrentStreamIterator where Iterator: IteratorProtocol {
+private struct ConcurrentStreamAsyncSequenceIterator<Iterator>: ConcurrentStreamIterator where Iterator: AsyncIteratorProtocol {
     
     private var iterator: Iterator
     
-    var isRawIterator: Bool { true }
     
-    
-    fileprivate mutating func next() async -> Element? {
-        self.iterator.next()
+    fileprivate mutating func next() async rethrows -> Element? {
+        try await self.iterator.next()
     }
     
     fileprivate func cancel() {
@@ -33,13 +31,13 @@ private struct ConcurrentStreamSequenceIterator<Iterator>: ConcurrentStreamItera
 }
 
 
-extension Sequence {
+extension AsyncSequence {
     
     /// Creates a stream from an async sequence.
     ///
     /// - Complexity: O(*1*).
     public var stream: some ConcurrentStream<Element> {
-        ConcurrentStreamSequence(iterator: ConcurrentStreamSequenceIterator(iterator: self.makeIterator()))
+        ConcurrentStreamSequence(iterator: ConcurrentStreamAsyncSequenceIterator(iterator: self.makeAsyncIterator()))
     }
     
 }

@@ -17,9 +17,14 @@ extension ConcurrentStream {
     @inlinable
     public var sequence: Array<Element> {
         get async throws {
-            try await self.withTaskGroup { taskGroup in
-                try await taskGroup.allObjects().sorted(on: \.offset, by: <).map(\.value)
+            var array: [Element] = []
+            var iterator = await self.makeAsyncIterator(sorted: true)
+            
+            while let next = try await iterator.next() {
+                array.append(next)
             }
+            
+            return array
         }
     }
     
@@ -394,26 +399,6 @@ extension ConcurrentStream {
         }
     }
     
-    @inlinable
-    public func withTaskGroup<T>(handler: (_ taskGroup: AsyncCompactMapSequence<ThrowingTaskGroup<(offset: Int, value: Element)?, any Error>, (offset: Int, value: Element)>) async throws -> T) async rethrows -> T {
-        try await withThrowingTaskGroup(of: (offset: Int, value: Element)?.self) { group in
-            var _block = self.source
-            var count = 0
-            while let next = try await _block.next() {
-                let _count = count
-                group.addTask {
-                    try Task.checkCancellation()
-                    guard let next = try await self.build(source: next) else { return nil }
-                    return (_count, next)
-                }
-                count += 1
-            }
-            
-            return try await handler(group.compacted())
-        }
-    }
-    
-    
     /// Calls the given closure on each element in the stream. Concurrent Operation.
     ///
     /// The iterator is optimized, and overhead is kept minimum when it is a ``ConcurrentStreamSequence``.
@@ -489,8 +474,12 @@ extension ConcurrentStream {
     ///   - transform: A mapping closure. transform accepts an element of this sequence as its parameter and returns a transformed value of the same or of a different type.
     ///
     /// - Complexity: O(*n*), lazily.
+    @inlinable
     public func map<T>(to type: T.Type = T.self, _ transform: @escaping @Sendable (Element) async throws -> T) async -> some ConcurrentStream<T> where T: Sendable {
-        ConcurrentMapStream(source: self, map: transform)
+        ConcurrentMapStream(source: self.source) {
+            guard let element = try await self.build(source: $0) else { return nil }
+            return try await transform(element)
+        }
     }
     
     /// Creates a concurrent stream that maps the given closure over the stream’s elements, omitting results that don’t return a value.
@@ -607,7 +596,6 @@ extension ConcurrentStream {
     /// - Returns: The array without repeated elements.
     ///
     /// - Complexity: O(*n*), where *n* is the length of this sequence.
-    @inlinable
     public func unique() -> some ConcurrentStream where Element: Hashable {
         ConcurrentUniqueStream(source: self.source, previousWork: self.build)
     }

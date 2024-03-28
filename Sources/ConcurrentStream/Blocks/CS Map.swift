@@ -7,40 +7,61 @@
 //
 
 
-internal struct ConcurrentMapStream<Element, SourceStream>: ConcurrentStream where Element: Sendable, SourceStream: ConcurrentStream {
+@usableFromInline
+internal struct ConcurrentMapStream<Element, SourceIterator>: ConcurrentStream where SourceIterator: ConcurrentStreamIterator {
     
-    let source: SourceStream
+    // MARK: - Instance Stored Properties
     
-    let map: (SourceStream.Element) async throws -> Element
+    @usableFromInline
+    internal var source: SourceIterator
     
-    func returns<T>(handler: (ResultSequence) async throws -> T) async rethrows -> T {
-        try await source.returns { results in
-            try await withThrowingTaskGroup(of: (ConcurrentStreamIndex, Element).self) { taskGroup in
-                for try await result in results {
-                    let index = result.0
-                    let element = result.1
-                    taskGroup.addTask {
-                        let result = try await self.map(element)
-                        return (index, result)
-                    }
-                }
-                
-                return try await handler(taskGroup)
-            }
-        }
+    @usableFromInline
+    internal let work: (_: SourceIterator.Element) async throws -> Element?
+    
+    
+    // MARK: - Computed Instance Properties
+    
+    
+    // MARK: - Instance Methods
+    
+    @inlinable
+    internal func build(source: SourceIterator.Element) async throws -> Element? {
+        try await work(source)
     }
     
-    typealias ResultSequence = ThrowingTaskGroup<(ConcurrentStreamIndex, Element), any Error>
     
-}
-
-
-public struct ConcurrentStreamIndex {
-    
-    var contents: [Int]
-    
-    init(contents: [Int]) {
-        self.contents = contents
+    @inlinable
+    internal func makeAsyncIterator(sorted: Bool) async -> some ConcurrentStreamIterator<Element> {
+        await _makeDefaultIterator(ordered: sorted)
     }
+    
+    // MARK: - Designated Initializers
+    
+    @inlinable
+    internal init(source: SourceIterator, work: @escaping (_: SourceIterator.Element) async throws -> Element?) {
+        self.source = source
+        self.work = work
+    }
+    
+    
+    // MARK: - Convenience Initializers
+    
+    
+    // MARK: - Type Properties
+    
+    
+    // MARK: - Type Methods
+    
+    
+    // MARK: - Operators
+    
+    
+    // MARK: - Type Alies
+    
+    
+    // MARK: - Substructures
+    
+    
+    // MARK: - Subscript
     
 }

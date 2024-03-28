@@ -39,7 +39,6 @@ public struct ConcurrentStreamSequence<Iterator>: ConcurrentStream where Iterato
     /// This performs the same as
     ///
     /// ```swift
-    /// @concurrent
     /// for i in 1...1000 {
     ///     
     /// }
