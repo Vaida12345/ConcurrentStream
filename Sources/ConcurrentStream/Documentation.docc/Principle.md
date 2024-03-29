@@ -124,3 +124,61 @@ The ``ConcurrentStream`` aims to achieve the same, while making it available out
 ## ConcurrentStream
 
 The ``ConcurrentStream`` aims to combine `DispatchQueue.perform` and `AsyncSequence`.
+
+- Creation of a stream is O(*1*).
+- Creation of an iterator, ie, ``ConcurrentStream/ConcurrentStream/makeAsyncIterator(sorted:)``, dispatches the work
+- iterator.``ConcurrentStream/ConcurrentStreamIterator/next()`` would wait for the work to complete.
+- Only an iterator can call another iterator. The invoking is made in the initializer (except for `flatmap`).
+
+
+## ConcurentStreamIterator
+
+
+Using `ConcurrentStreamOrderedIterator`, which is the default ordered iterator, as an example.
+
+### Initialization
+
+In the initialization phase, a `taskGroup` is created and detached. The results of the `taskGroup` is reported using an `AsyncStream` continuation.
+
+Multiple `yield` and cancelation checking points were created throughout the creation and execution of the child tasks of `taskGroup`. Using the following code,
+```swift
+var iterator = await ConcurrentStreamOrderedIterator(stream: stream)
+
+while let next = try await iterator.next() {
+    print(">>", next)
+}
+```
+You can see a recurring sequence where a task is *created*, *executed*, and *reported* for each child. This means that typically, the report for the previous child comes before the creation of the next child task. You will also observe that the sequence occurs in batches, matching the number of cores with which a computer is equipped.
+
+### The Order
+
+The sequence in which results are yielded upon invoking `next` corresponds to the sequence in the originating `stream`. The implementation entails the use of a dictionary buffer, which retains any pending values until the targeted value is generated.
+
+### Cancellation
+
+As a `taskGroup` waits for all of its child tasks to complete before returning, the `taskGroup` used in the iterator is detached. Hence manual task cancelation is required.
+
+- Note: The iterator of the source `stream` would also require manual cancelation. This iterator is called in the `taskGroup` in sequence to produce the next source.
+
+The tasks can be cancelled in three ways.
+- Releasing reference to the iterator. (Cancelation in `deinit`)
+- Automatically cancelled when the parent `Task` executing the `next` method is cancelled.
+- Calling ``ConcurrentStreamIterator/cancel()`` explicitly.
+
+This should cover the common use case. In the following example, the stream is canceled due to the release of its reference, caused by the exit of the function, which in turn is triggered by the thrown error.
+```swift
+var iterator = await ConcurrentStreamOrderedIterator(stream: stream)
+
+for _ in 0...1000 {
+    try Task.checkCancellation()
+    heavyWork(i: 0)
+}
+```
+
+As another example, the cancellation of the stream occurs while awaiting the retrieval of the `next` element.
+```swift
+var iterator = await ConcurrentStreamOrderedIterator(stream: stream)
+
+while let next = try await iterator.next() {
+    ...
+}
