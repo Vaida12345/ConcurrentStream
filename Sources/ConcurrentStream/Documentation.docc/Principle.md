@@ -182,3 +182,28 @@ var iterator = await ConcurrentStreamOrderedIterator(stream: stream)
 while let next = try await iterator.next() {
     ...
 }
+```
+
+### Performance
+
+Using Benchmark, `-O`, the following code
+```swift
+var iterator = await [Int](1...100).stream.map { heavyWork(i: $0) }.makeAsyncIterator(sorted: true)
+
+while let next = try await iterator.next() {
+
+}
+```
+
+Performed similar to,
+```swift
+await withTaskGroup(of: Int.self) { taskGroup in
+    for i in 1...100 {
+        taskGroup.addTask {
+            heavyWork(i: i)
+        }
+    }
+}
+```
+
+Similar results can be found for double `map`s. Proofing the efficiency for the source `stream`

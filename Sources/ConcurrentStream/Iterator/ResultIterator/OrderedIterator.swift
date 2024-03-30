@@ -55,8 +55,32 @@
 /// while let next = try await iterator.next() {
 ///     ...
 /// }
-@usableFromInline
-internal final class ConcurrentStreamOrderedIterator<Stream>: ConcurrentStreamIterator where Stream: ConcurrentStream {
+/// ```
+///
+/// ### Performance
+///
+/// Using Benchmark, `-O`, the following code
+/// ```swift
+/// var iterator = await [Int](1...100).stream.map { heavyWork(i: $0) }.makeAsyncIterator(sorted: true)
+///
+/// while let next = try await iterator.next() {
+///
+/// }
+/// ```
+///
+/// Performed similar to,
+/// ```swift
+/// await withTaskGroup(of: Int.self) { taskGroup in
+///     for i in 1...100 {
+///         taskGroup.addTask {
+///             heavyWork(i: i)
+///         }
+///     }
+/// }
+/// ```
+///
+/// Similar results can be found for double `map`s. Proofing the efficiency for the source `stream`
+public final class ConcurrentStreamOrderedIterator<Stream>: ConcurrentStreamIterator where Stream: ConcurrentStream {
     
     /// The iterator of `taskGroup`
     private var base: AsyncThrowingStream<Word, any Error>.Iterator?
@@ -74,8 +98,7 @@ internal final class ConcurrentStreamOrderedIterator<Stream>: ConcurrentStreamIt
     private var _block: Stream.SourceIterator
     
     
-    @usableFromInline
-    internal init(stream: Stream) async {
+    public init(stream: Stream) async {
         self._block = stream.source
         let (_stream, continuation) = AsyncThrowingStream.makeStream(of: Word.self)
         self.base = _stream.makeAsyncIterator()
@@ -86,11 +109,11 @@ internal final class ConcurrentStreamOrderedIterator<Stream>: ConcurrentStreamIt
                     var count = 0
                     while let value = try await self?._block.next() {
                         let _count = count
-                        print("getting next: \(_count) isCancelled: \(Task.isCancelled)")
+                        _debugPrint("getting next: \(_count) isCancelled: \(Task.isCancelled)")
                         
                         await Task.yield()
                         guard !Task.isCancelled else {
-                            print("cancelled")
+                            _debugPrint("cancelled")
                             self?.cancel()
                             return
                         }
@@ -99,7 +122,7 @@ internal final class ConcurrentStreamOrderedIterator<Stream>: ConcurrentStreamIt
                             await Task.yield()
                             try Task.checkCancellation()
                             let next = try await (_count, stream.build(source: value))
-                            print("produced \(next.0)")
+                            _debugPrint("produced \(next.0)")
                             continuation.yield(next)
                         }
                         
@@ -116,18 +139,18 @@ internal final class ConcurrentStreamOrderedIterator<Stream>: ConcurrentStreamIt
     }
     
     deinit {
-        print("deinit")
+        _debugPrint("deinit")
         self.cancel()
     }
     
     /// Access the next element in the stream. `wait`ing is built-in.
-    @usableFromInline
-    internal func next() async throws -> Element? {
+    public func next() async throws -> Element? {
         do {
             let index = index
             while _buffer[index] == nil {
                 await Task.yield()
                 try Task.checkCancellation()
+                
                 guard let word = try await base?.next() else {
                     return nil
                 } // the only place where `nil` is returned.
@@ -145,24 +168,28 @@ internal final class ConcurrentStreamOrderedIterator<Stream>: ConcurrentStreamIt
                 return try await next() // get next element
             }
         } catch {
-            print("will cancel")
+            _debugPrint("will cancel")
             self.cancel()
             throw error
         }
     }
     
-    @usableFromInline
-    internal func cancel() {
+    public func cancel() {
         task?.cancel()
         _block.cancel()
     }
     
     
-    @usableFromInline
-    internal typealias Element = Stream.Element
+    public typealias Element = Stream.Element
     
     /// The Internal stored word
-    @usableFromInline
-    internal typealias Word = (Int, Element?)
+    private typealias Word = (Int, Element?)
     
+}
+
+
+private func _debugPrint(_ items: Any...) {
+#if DEBUG
+    print(items)
+#endif
 }
