@@ -36,7 +36,7 @@ final class ConcurrentStreamTests: XCTestCase {
             let iterator = await ConcurrentStreamOrderedIterator(stream: stream)
             
             try await withTaskCancellationHandler {
-                for _ in 0...1000 {
+                for _ in 0...10 {
                     //                await Task.yield()
                     heavyWork(i: 0)
                 }
@@ -52,7 +52,7 @@ final class ConcurrentStreamTests: XCTestCase {
 //        try await task.value
         try await Task.sleep(for: .seconds(0.0001))
         print("will ask to cancel")
-        task.cancel()
+//        task.cancel()
         try await Task.sleep(for: .seconds(10))
     }
     

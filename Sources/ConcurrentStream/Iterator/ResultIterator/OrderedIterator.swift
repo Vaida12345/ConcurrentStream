@@ -166,7 +166,6 @@ public final class ConcurrentStreamOrderedIterator<Stream>: ConcurrentStreamIter
         do {
             let index = index
             while _buffer[index] == nil {
-                await Task.yield()
                 try Task.checkCancellation()
                 
                 guard let word = try await base?.next() else {
@@ -206,7 +205,7 @@ public final class ConcurrentStreamOrderedIterator<Stream>: ConcurrentStreamIter
 }
 
 
-private func _debugPrint(_ items: Any...) {
+private func _debugPrint(_ items: Any) {
 #if DEBUG
     print(items)
 #endif

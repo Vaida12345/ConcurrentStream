@@ -7,7 +7,7 @@
 //
 
 
-private  final class ConcurrentStreamConditionalOrderIterator<Stream>: ConcurrentStreamIterator where Stream: ConcurrentStream {
+private final class ConcurrentStreamConditionalOrderIterator<Stream>: ConcurrentStreamIterator where Stream: ConcurrentStream {
     
     private var iterator: any ConcurrentStreamIterator<Element>
     

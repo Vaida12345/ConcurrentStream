@@ -7,41 +7,57 @@
 //
 
 
-@usableFromInline
 internal final class ConcurrentStreamShuffledIterator<Stream>: ConcurrentStreamIterator where Stream: ConcurrentStream {
     
+    
+    /// The iterator of `taskGroup`
     private var base: AsyncThrowingStream<Word, any Error>.Iterator?
     
+    /// The task containing the `TaskGroup`
     private var task: Task<Void, any Error>?
     
-    private var _block: Stream.SourceIterator
+    /// The source iterator
+    private let _block: Stream.SourceIterator
     
-    @usableFromInline
+    
     internal init(stream: Stream) async {
         self._block = stream.source
-        self.base = AsyncThrowingStream(Word.self) { continuation in
-            self.task = Task {
-                do {
-                    try await withThrowingTaskGroup(of: Void.self) { group in
-                        while let value = try await _block.next() {
-                            group.addTask(priority: .medium) {
-                                let next = try await stream.build(source: value)
-                                continuation.yield(next)
-                            }
+        let (_stream, continuation) = AsyncThrowingStream.makeStream(of: Word.self)
+        self.base = _stream.makeAsyncIterator()
+        
+        self.task = Task.detached { [weak self] in
+            do {
+                try await withThrowingTaskGroup(of: Void.self) { group in
+                    while let value = try await self?._block.next() {
+                        
+                        await Task.yield()
+                        guard !Task.isCancelled else {
+                            self?.cancel()
+                            return
                         }
                         
-                        try await group.waitForAll()
-                        continuation.finish()
+                        group.addTask {
+                            await Task.yield()
+                            try Task.checkCancellation()
+                            let next = try await stream.build(source: value)
+                            continuation.yield(next)
+                        }
                     }
-                } catch {
-                    continuation.finish(throwing: error)
+                    
+                    try await group.waitForAll()
+                    continuation.finish()
                 }
+            } catch {
+                continuation.finish(throwing: error)
             }
-        }.makeAsyncIterator()
+        }
+    }
+    
+    deinit {
+        self.cancel()
     }
     
     /// Access the next element in the stream. `wait`ing is built-in.
-    @usableFromInline
     internal func next() async throws -> Element? {
         do {
             try Task.checkCancellation()
@@ -53,25 +69,22 @@ internal final class ConcurrentStreamShuffledIterator<Stream>: ConcurrentStreamI
             } else {
                 return try await self.next()
             }
-
         } catch {
             self.cancel()
             throw error
         }
     }
     
-    @usableFromInline
     internal func cancel() {
         task?.cancel()
         _block.cancel()
     }
     
     
-    @usableFromInline
     internal typealias Element = Stream.Element
     
     /// The Internal stored word
-    @usableFromInline
-    internal typealias Word = Element?
+    private typealias Word = Element?
+    
     
 }
