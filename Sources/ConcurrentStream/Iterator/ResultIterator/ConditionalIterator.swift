@@ -7,12 +7,12 @@
 //
 
 
-private struct ConcurrentStreamConditionalOrderIterator<Stream>: ConcurrentStreamIterator where Stream: ConcurrentStream {
+private  final class ConcurrentStreamConditionalOrderIterator<Stream>: ConcurrentStreamIterator where Stream: ConcurrentStream {
     
     private var iterator: any ConcurrentStreamIterator<Element>
     
     
-    fileprivate mutating func next() async rethrows -> Element? {
+    fileprivate func next() async rethrows -> Element? {
         try await iterator.next()
     }
     

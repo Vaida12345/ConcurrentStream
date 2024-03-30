@@ -7,14 +7,14 @@
 //
 
 
-private struct ConcurrentStreamSerializedIterator<Element>: ConcurrentStreamIterator {
+private  final class ConcurrentStreamSerializedIterator<Element>: ConcurrentStreamIterator {
     
     private var lhs: any ConcurrentStreamIterator<Element>
     
     private var rhs: any ConcurrentStreamIterator<Element>
     
     
-    fileprivate mutating func next() async throws -> Element? {
+    fileprivate func next() async throws -> Element? {
         if let lhs = try await lhs.next() { return lhs }
         return try await rhs.next()
     }

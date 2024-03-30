@@ -7,12 +7,12 @@
 //
 
 
-private struct ConcurrentStreamAsyncSequenceIterator<Iterator>: ConcurrentStreamIterator where Iterator: AsyncIteratorProtocol {
+private final class ConcurrentStreamAsyncSequenceIterator<Iterator>: ConcurrentStreamIterator where Iterator: AsyncIteratorProtocol {
     
     private var iterator: Iterator
     
     
-    fileprivate mutating func next() async rethrows -> Element? {
+    fileprivate func next() async rethrows -> Element? {
         try await self.iterator.next()
     }
     

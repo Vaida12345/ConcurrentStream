@@ -48,6 +48,24 @@
 /// }
 /// ```
 ///
+/// One could also use the `withTaskCancellationHandler` call,
+///
+/// ```swift
+/// let iterator = await ConcurrentStreamOrderedIterator(stream: stream)
+///
+/// try await withTaskCancellationHandler {
+///     for _ in 0...1000 {
+///         heavyWork(i: 0)
+///     }
+///
+///     while let next = try await iterator.next() {
+///         ...
+///     }
+/// } onCancel: {
+///     iterator.cancel()
+/// }
+/// ```
+///
 /// As another example, the cancellation of the stream occurs while awaiting the retrieval of the `next` element.
 /// ```swift
 /// var iterator = await ConcurrentStreamOrderedIterator(stream: stream)
@@ -95,7 +113,7 @@ public final class ConcurrentStreamOrderedIterator<Stream>: ConcurrentStreamIter
     private var task: Task<Void, any Error>?
     
     /// The source iterator
-    private var _block: Stream.SourceIterator
+    private let _block: Stream.SourceIterator
     
     
     public init(stream: Stream) async {

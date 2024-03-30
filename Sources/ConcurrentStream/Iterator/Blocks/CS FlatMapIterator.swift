@@ -8,7 +8,7 @@
 
 
 @usableFromInline
-internal struct ConcurrentFlatMapStreamIterator<SourceIterator, SegmentOfResult>: ConcurrentStreamIterator where SourceIterator: ConcurrentStreamIterator, SegmentOfResult: ConcurrentStream {
+internal  final class ConcurrentFlatMapStreamIterator<SourceIterator, SegmentOfResult>: ConcurrentStreamIterator where SourceIterator: ConcurrentStreamIterator, SegmentOfResult: ConcurrentStream {
     
     // MARK: - Instance Stored Properties
     
@@ -24,7 +24,7 @@ internal struct ConcurrentFlatMapStreamIterator<SourceIterator, SegmentOfResult>
     // MARK: - Instance Methods
     
     @usableFromInline
-    internal mutating func next() async throws -> Element? {
+    internal func next() async throws -> Element? {
         var next: Element? = nil
         
         while next == nil {

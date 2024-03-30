@@ -8,8 +8,27 @@
 
 
 /// An iterator to a concurrent stream.
+///
+/// This protocol is a class protocol, due to the fact that
+/// - A class protocol has a `deinit` block, where the task can be cancelled.
+/// - A class protocol has non-mutating next, making the following way of cancelation possible:
+/// ```swift
+/// let iterator = await ConcurrentStreamOrderedIterator(stream: stream)
+///
+/// try await withTaskCancellationHandler {
+///     for _ in 0...1000 {
+///         heavyWork(i: 0)
+///     }
+///
+///     while let next = try await iterator.next() {
+///         ...
+///     }
+/// } onCancel: {
+///     iterator.cancel()
+/// }
+/// ```
 @rethrows
-public protocol ConcurrentStreamIterator<Element>: AsyncIteratorProtocol where Element: Sendable {
+public protocol ConcurrentStreamIterator<Element>: AsyncIteratorProtocol, AnyObject where Element: Sendable {
     
     
     /// Returns the next element in the iterator.
@@ -17,7 +36,7 @@ public protocol ConcurrentStreamIterator<Element>: AsyncIteratorProtocol where E
     /// - Returns: The next element in the iterator, `nil` when reached the end.
     ///
     /// - throws: rethrows whatever is thrown in the definition.
-    mutating func next() async throws -> Element?
+    func next() async throws -> Element?
     
     /// Cancels the task of obtaining iterator.
     func cancel()

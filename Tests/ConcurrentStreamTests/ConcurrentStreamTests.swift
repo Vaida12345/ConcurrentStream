@@ -33,17 +33,21 @@ final class ConcurrentStreamTests: XCTestCase {
         print(date.distance(to: Date()))
         
         let task = Task {
-            var iterator = await ConcurrentStreamOrderedIterator(stream: stream)
+            let iterator = await ConcurrentStreamOrderedIterator(stream: stream)
             
-            for _ in 0...1000 {
-//                await Task.yield()
-                try Task.checkCancellation()
-                heavyWork(i: 0)
+            try await withTaskCancellationHandler {
+                for _ in 0...1000 {
+                    //                await Task.yield()
+                    heavyWork(i: 0)
+                }
+                
+                while let next = try await iterator.next() {
+                    print(">>", next)
+                }
+            } onCancel: {
+                iterator.cancel()
             }
-            
-            while let next = try await iterator.next() {
-                print(">>", next)
-            }
+
         }
 //        try await task.value
         try await Task.sleep(for: .seconds(0.0001))
@@ -55,6 +59,7 @@ final class ConcurrentStreamTests: XCTestCase {
 }
 
 
+@Sendable
 func heavyWork(i: Int) -> Int {
     var count = 0
     for _ in 0...10000 {

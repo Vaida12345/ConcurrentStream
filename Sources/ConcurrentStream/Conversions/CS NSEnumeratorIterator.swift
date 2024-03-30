@@ -10,12 +10,12 @@
 import Foundation
 
 
-private struct ConcurrentStreamNSEnumeratorIterator<Element>: ConcurrentStreamIterator {
+private  final class ConcurrentStreamNSEnumeratorIterator<Element>: ConcurrentStreamIterator {
     
     private var iterator: NSEnumerator
     
     
-    fileprivate mutating func next() async -> Element? {
+    fileprivate func next() async -> Element? {
         self.iterator.nextObject() as? Element
     }
     
