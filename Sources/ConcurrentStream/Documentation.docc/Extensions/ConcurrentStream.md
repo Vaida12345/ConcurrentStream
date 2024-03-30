@@ -1,45 +1,17 @@
-# ``Stratum/ConcurrentStream``
+# ``ConcurrentStream/ConcurrentStream``
 
 A stream, where each block works concurrently if possible.
 
-
 ## Overview
 
-A stream implementation indicates that the initialization returns before all of its elements completes. This is a lazy operation, and the elements are only calculated in call of ``ConcurrentStream/makeAsyncIterator(sorted:)``.
+The ``ConcurrentStream`` aims to combine the functionality of execution in parallel and `AsyncSequence`.
 
-`ConcurrentStream` is better than `TaskGroup` that one do not need to `wait` for all the elements within the closure. In this implementation, the iterator is escaped as a stream.
+- Creation of a stream dispatches the work and returns immediately.
+- ``ConcurrentStream/ConcurrentStream/next()`` would wait for the work to complete.
 
-- Warning: A stream is fragile, elements are discarded during traversal.
+- Warning: A stream is fragile, elements are discarded during traversal. Hence do never reuse a stream.
 
-
-## Relationship with Sequence
-
-As `Sequence` and `AsyncSequence`, the ``ConcurrentStream`` is constructed using an ``ConcurrentStreamIterator``, which requires the implementation of ``ConcurrentStreamIterator/next()``. The requirement of `next` is defined as:
-
-```swift
-mutating func next() async throws -> Element?
-```
-
-Hence, this iterator can be used as a encapsulation of `AsyncIteratorProtocol` and `IteratorProtocol`. In this implementation, however, a container was used to bridge between ``ConcurrentStreamIterator`` and these protocols.
-
-As `IteratorProtocol`, `Element` is required during definition. In this way, the type-casting can be omitted.
-
-```swift
-func makeIterator() async -> any ConcurrentStreamIterator<Int> {
-    ...
-}
-
-var iterator = await makeIterator()
-
-while let next = try await iterator.next() {
-    ...
-}
-```
-
-This this case, `next` is `Int`, and `iterator` is `any ConcurrentStreamIterator<Int>`. Unlike `AsyncIteratorProtocol`, you do not need to type-caset. 
-
-
-## Usage
+### Usage
 
 A stream can be created using `.stream` on a `Sequence` or an `AsyncSequence`.
 
@@ -47,42 +19,38 @@ A stream can be created using `.stream` on a `Sequence` or an `AsyncSequence`.
 try await (1...1000)
     .stream
     .map { $0 % 2 }
-    .unique()
-    .enumerate { index, value in
-        
-    }
 ```
 
-note that the call is not in order, which is expected. One should only relay on the index, not the order.
+### Cancelation
 
+The stream can be cancelled in three ways.
+- Releasing reference to the `stream`. (Cancelation in `deinit`)
+- Automatically cancelled when the parent `Task` executing  ``ConcurrentStream/ConcurrentStream/next()`` is cancelled.
+- Calling ``ConcurrentStream/ConcurrentStream/cancel()`` explicitly.
 
-### Obtaining the sequence
+This should cover the common use case. You can read details about the `ConcurrentStream` [here](<doc:Principle>).
 
-An ``ConcurrentStreamIterator`` (stream, single-threaded) can be retrieved given ``makeAsyncIterator(sorted:)``. The unsorted iterator requires do not buffer and hence performs slightly better. 
+- Tip: There exists unavoidable overhead due to the use of `AsyncStream` to escape the results of `taskGroup`. Hence aim to reduce the number of `map`-like operations queued.
 
-The iterator is optimized, and overhead is kept minimum when it is a ``ConcurrentStreamSequence``. 
+## Implementation Notes
+### Class Protocol
 
+This protocol is a class protocol, due to the fact that
+- A class protocol has a `deinit` block, where the task can be cancelled.
+- A class protocol has non-mutating next, making the following way of cancelation possible:
 ```swift
-try await (1...1000)
-    .stream
-    .forEach { index in
-        
-    }
-```
+let stream = some ConcurrentStream
 
-This performs the same as
-
-```swift
-for i in 1...1000 {
-    
+try await withTaskCancellationHandler {
+    ...
+    stream.foo()
+} onCancel: {
+    iterator.cancel()
 }
 ```
 
-### Converting the result
-
-The result stream can be converted to `Array` using ``sequence`` or `AsyncThrowingStream` using ``async``.
-
-One can also choose to ``enumerate(_:)`` on the stream, which provides the index with the element; or ``forEach(_:)``, where the order of traversal is not guaranteed. 
+### The order
+A stream is always ordered, given the negligible performance difference between an ordered iterator and an unordered one.
 
 
 ## Throwing
@@ -90,7 +58,7 @@ One can also choose to ``enumerate(_:)`` on the stream, which provides the index
 The closure should only throw when one needs to cancel the pending operations and throw the error, which will be captured in
 
 ```swift
-while let next = try await iterator.next
+while let next = try await stream.next
 ```
 
 Otherwise, returns a `nil` would be a better choice, allowing the stream to keep reporting the valid outputs.
@@ -98,23 +66,37 @@ Otherwise, returns a `nil` would be a better choice, allowing the stream to keep
 
 ### rethrows implementation
 
-The ``ConcurrentStream`` protocol is marked as `@rethrows`, hence some methods only throws when the protocol requirement, ie, ``build(source:)``, throws. However, this requires the compiler knowing the exact ``ConcurrentStream`` and ``ConcurrentStreamIterator`` that it is working with. `any ConcurrentStream<Element>` or even a generic type alias would not satisfy this requirement. Hence, due to this language limitation, and `TaskGroup` / `ThrowingTaskGroup`, the implementation would throw nevertheless. 
+A new implementation addressing will come out with Swift6.0.
 
-You may encounter cases where `try` is required when it would never throw.
-
-```swift
-try await (1...1000)
-    .stream
-    .map { $0 % 2 }
-    .sequence
-```
-
-## Implementation notes 
-
-When using a `Task { }` to obtain ``ConcurrentStreamIterator/next()``, remember to mark the priority of the `Task` above `.medium`, otherwise the system would try to complete the iterator before entering the task.
+> Bug:
+> You may encounter cases where `try` is required when it would never throw.
+> 
+> ```swift
+> try await (1...1000)
+>     .stream
+>     .map { $0 % 2 }
+>     .sequence
+> ```
 
 
 ## Topics
+
+### Creation of stream
+
+The ``ConcurrentStream`` does not offer a direct way of creation. You would always need to bridge from other structures.
+
+- ``Swift/Sequence/stream``
+
+### Obtaining elements explicitly
+Returns the next element in the iterator. The elements will always be returned in the order they were submitted.
+- ``next()``
+
+
+### Cancelling stream
+
+This is the explicit way of canceling a stream. A stream would be canceled explicitly when the reference is released and when the parent `Task` is cancelled. [Read more](<doc:Principle>).
+
+- ``cancel()``
 
 ### Mapping
 
@@ -172,16 +154,6 @@ When using a `Task { }` to obtain ``ConcurrentStreamIterator/next()``, remember 
 ### Iterator to Sequence
 
 - ``ConcurrentStreamSequence``
-
-
-### Protocol Requirements
-The stream is modeled as as a series of operations to ``source``, which is of type ``SourceIterator``. Each operation is defined in ``build(source:)``. ``Element`` represents the output. `next()` was avoided intentionally to achieve a lazy concurrent stream. ``Iterator`` represents the finalized iterator, required for generics.
-
-- ``source``
-- ``build(source:)``
-- ``Element``
-- ``SourceIterator``
-- ``Iterator``
 
 
 ### Methods of same signature

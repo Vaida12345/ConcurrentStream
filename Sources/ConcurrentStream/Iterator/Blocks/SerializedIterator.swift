@@ -6,8 +6,8 @@
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
-
-private  final class ConcurrentStreamSerializedIterator<Element>: ConcurrentStreamIterator {
+/*
+private final class ConcurrentStreamSerializedIterator<Element>: ConcurrentStreamIterator {
     
     private var lhs: any ConcurrentStreamIterator<Element>
     
@@ -48,7 +48,7 @@ extension ConcurrentStream {
     /// - Parameters:
     ///   - lhs: The current stream
     ///   - rhs: Another stream to be iterated at the end of current stream.
-    public static func + (lhs: Self, rhs: some ConcurrentStream<Element>) async -> some ConcurrentStream<Element> {
+    public static func + (_ lhs: Self, _ rhs: some ConcurrentStream<Element>) async -> some ConcurrentStream<Element> {
         await ConcurrentStreamSequence(iterator: ConcurrentStreamSerializedIterator(lhs: lhs, rhs: rhs))
     }
     
@@ -59,8 +59,9 @@ extension ConcurrentStream {
     /// - Parameters:
     ///   - lhs: The current stream
     ///   - rhs: Another stream to be iterated at the end of current stream.
-    public static func + (lhs: Self, rhs: any ConcurrentStream<Element>) async -> some ConcurrentStream<Element> {
+    public static func + (_ lhs: Self, _ rhs: any ConcurrentStream<Element>) async -> some ConcurrentStream<Element> {
         await ConcurrentStreamSequence(iterator: ConcurrentStreamSerializedIterator(lhs: lhs, rhs: rhs))
     }
 
 }
+*/

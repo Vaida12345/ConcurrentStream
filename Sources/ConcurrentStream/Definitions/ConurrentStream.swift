@@ -9,54 +9,40 @@
 
 // Documentation in DocC.
 @rethrows
-public protocol ConcurrentStream<Element> {
+public protocol ConcurrentStream<Element>: AsyncIteratorProtocol, AnyObject {
     
-    /// The base that provides the contents to the stream.
-    var source: SourceIterator { get }
+    /// Returns the next element in the iterator.
+    ///
+    /// The elements will always be returned in the order they were submitted.
+    ///
+    /// - Returns: The next element in the iterator, `nil` when reached the end.
+    func next() async throws -> Element?
     
-    /// Transforms elements of the source.
+    /// Cancels the stream, and its upstreams.
     ///
-    /// The existence of the result is marked by the optional.
-    func build(source: SourceIterator.Element) async throws -> Element?
+    /// The stream can be cancelled in three ways.
+    /// - Releasing reference to the `stream`. (Cancelation in `deinit`)
+    /// - Automatically cancelled when the parent `Task` executing  ``ConcurrentStream/ConcurrentStream/next()`` is cancelled.
+    /// - Calling ``ConcurrentStream/ConcurrentStream/cancel()`` explicitly.
+    ///
+    /// This should cover the common use case. You can read details about the `ConcurrentStream` [here](<doc:Principle>).
+    ///
+    /// > Example:
+    /// > You could use the `withTaskCancellationHandler` to observe the cancelation of parent task,
+    /// >
+    /// > ```swift
+    /// > let stream = some ConcurrentStream
+    /// >
+    /// > try await withTaskCancellationHandler {
+    /// >     ...
+    /// >     stream.foo()
+    /// > } onCancel: {
+    /// >     iterator.cancel()
+    /// > }
+    /// > ```
+    func cancel()
     
-    /// Creates the asynchronous iterator that produces elements of this stream.
-    ///
-    /// An ``ConcurrentStreamIterator`` (stream, single-threaded) can be retrieved given ``makeAsyncIterator(sorted:)``. The unsorted iterator requires do not buffer and hence performs slightly better.
-    ///
-    /// The iterator is optimized, and overhead is kept minimum when it is a ``ConcurrentStreamSequence``.
-    ///
-    /// ```swift
-    /// try await (1...1000)
-    ///     .stream
-    ///     .enumerate { index, value in
-    ///         
-    ///     }
-    /// ```
-    ///
-    /// This performs the same as
-    ///
-    /// ```swift
-    /// for i in 1...1000 {
-    ///
-    /// }
-    /// ```
-    ///
-    /// To cancel the task of iterator, call ``ConcurrentStreamIterator/cancel()``.
-    ///
-    /// - Warning: A default implementation exists and is preferred.
-    ///
-    /// - Important: When using a `Task { }` to obtain `next`, remember to mark the priority of the `Task` above `.medium`, otherwise the system would try to complete the iterator before entering the task.
-    ///
-    /// - Parameters:
-    ///   - sorted: Whether the iterator should produce the elements in order.
-    func makeAsyncIterator(sorted: Bool) async -> Iterator
-    
-    /// The type of the output of stream
-    associatedtype Element: Sendable where Element == Iterator.Element
-    
-    /// The iterator that provides the source stream.
-    associatedtype SourceIterator: ConcurrentStreamIterator
-    
-    associatedtype Iterator: ConcurrentStreamIterator 
+    /// The type of element produced by this stream.
+    associatedtype Element
     
 }

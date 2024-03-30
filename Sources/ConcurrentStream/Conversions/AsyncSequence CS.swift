@@ -7,6 +7,7 @@
 //
 
 
+/*
 /// An async sequence made from a concurrent stream.
 public struct AsyncSequenceFromConcurrentStream<Stream>: AsyncSequence where Stream: ConcurrentStream {
     
@@ -46,3 +47,4 @@ extension ConcurrentStream {
     }
     
 }
+*/

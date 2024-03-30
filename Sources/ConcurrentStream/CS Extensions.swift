@@ -6,7 +6,7 @@
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
-
+/*
 extension ConcurrentStream {
     
     /// Creates an array and waits for the elements to fill.
@@ -601,3 +601,4 @@ extension ConcurrentStream {
     }
     
 }
+*/

@@ -28,12 +28,12 @@ final class ConcurrentStreamTests: XCTestCase {
 //    }
     
     func testCancel() async throws {
-        let date = Date()
-        let stream = await [Int](1...1000).stream.map(heavyWork)
-        print(date.distance(to: Date()))
+        
         
         let task = Task {
-            let iterator = await ConcurrentStreamOrderedIterator(stream: stream)
+            let date = Date()
+            let stream = await [Int](1...1000).stream.map(heavyWork).map({ $0 })
+            print(date.distance(to: Date()))
             
             try await withTaskCancellationHandler {
                 for _ in 0...10 {
@@ -41,11 +41,11 @@ final class ConcurrentStreamTests: XCTestCase {
                     heavyWork(i: 0)
                 }
                 
-                while let next = try await iterator.next() {
+                while let next = try await stream.next() {
                     print(">>", next)
                 }
             } onCancel: {
-                iterator.cancel()
+                stream.cancel()
             }
 
         }

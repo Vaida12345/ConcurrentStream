@@ -6,7 +6,7 @@
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
-
+/*
 private final class ConcurrentStreamAsyncSequenceIterator<Iterator>: ConcurrentStreamIterator where Iterator: AsyncIteratorProtocol {
     
     private var iterator: Iterator
@@ -41,3 +41,4 @@ extension AsyncSequence {
     }
     
 }
+*/

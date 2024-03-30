@@ -6,7 +6,7 @@
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
-
+/*
 private final class ConcurrentStreamConditionalOrderIterator<Stream>: ConcurrentStreamIterator where Stream: ConcurrentStream {
     
     private var iterator: any ConcurrentStreamIterator<Element>
@@ -38,3 +38,4 @@ public extension ConcurrentStream {
     }
     
 }
+*/

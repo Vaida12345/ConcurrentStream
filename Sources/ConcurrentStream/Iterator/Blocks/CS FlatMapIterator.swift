@@ -6,9 +6,9 @@
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
-
+/*
 @usableFromInline
-internal  final class ConcurrentFlatMapStreamIterator<SourceIterator, SegmentOfResult>: ConcurrentStreamIterator where SourceIterator: ConcurrentStreamIterator, SegmentOfResult: ConcurrentStream {
+internal final class ConcurrentFlatMapStreamIterator<SourceIterator, SegmentOfResult>: ConcurrentStreamIterator where SourceIterator: ConcurrentStreamIterator, SegmentOfResult: ConcurrentStream {
     
     // MARK: - Instance Stored Properties
     
@@ -80,3 +80,4 @@ internal  final class ConcurrentFlatMapStreamIterator<SourceIterator, SegmentOfR
     // MARK: - Subscript
     
 }
+*/

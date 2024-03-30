@@ -125,16 +125,13 @@ The ``ConcurrentStream`` aims to achieve the same, while making it available out
 
 The ``ConcurrentStream`` aims to combine `DispatchQueue.perform` and `AsyncSequence`.
 
-- Creation of a stream is O(*1*).
-- Creation of an iterator, ie, ``ConcurrentStream/ConcurrentStream/makeAsyncIterator(sorted:)``, dispatches the work
-- iterator.``ConcurrentStream/ConcurrentStreamIterator/next()`` would wait for the work to complete.
-- Only an iterator can call another iterator. The invoking is made in the initializer (except for `flatmap`).
+- Creation of a stream dispatches the work and returns immediately.
+- ``ConcurrentStream/ConcurrentStream/next()`` would wait for the work to complete.
+- A stream can **never** be reused.
 
 
-## ConcurentStreamIterator
-
-
-Using `ConcurrentStreamOrderedIterator`, which is the default ordered iterator, as an example.
+> Example:
+> Using `ConcurrentMapStream` as an example.
 
 ### Initialization
 
@@ -158,12 +155,11 @@ The sequence in which results are yielded upon invoking `next` corresponds to th
 
 As a `taskGroup` waits for all of its child tasks to complete before returning, the `taskGroup` used in the iterator is detached. Hence manual task cancelation is required.
 
-- Note: The iterator of the source `stream` would also require manual cancelation. This iterator is called in the `taskGroup` in sequence to produce the next source.
 
 The tasks can be cancelled in three ways.
-- Releasing reference to the iterator. (Cancelation in `deinit`)
-- Automatically cancelled when the parent `Task` executing the `next` method is cancelled.
-- Calling ``ConcurrentStreamIterator/cancel()`` explicitly.
+- Releasing reference to the `stream`. (Cancelation in `deinit`)
+- Automatically cancelled when the parent `Task` executing  ``ConcurrentStream/ConcurrentStream/next()`` is cancelled.
+- Calling ``ConcurrentStream/ConcurrentStream/cancel()`` explicitly.
 
 This should cover the common use case. In the following example, the stream is canceled due to the release of its reference, caused by the exit of the function, which in turn is triggered by the thrown error.
 ```swift
@@ -178,16 +174,11 @@ for _ in 0...1000 {
 One could also use the `withTaskCancellationHandler` call,
 
 ```swift
-let iterator = await ConcurrentStreamOrderedIterator(stream: stream)
+let stream = some ConcurrentStream
 
 try await withTaskCancellationHandler {
-    for _ in 0...1000 {
-        heavyWork(i: 0)
-    }
-
-    while let next = try await iterator.next() {
-        ...
-    }
+    ...
+    stream.foo()
 } onCancel: {
     iterator.cancel()
 }
@@ -206,9 +197,9 @@ while let next = try await iterator.next() {
 
 Using Benchmark, `-O`, the following code
 ```swift
-var iterator = await [Int](1...100).stream.map { heavyWork(i: $0) }.makeAsyncIterator(sorted: true)
+var stream = await [Int](1...100).stream.map { heavyWork(i: $0) }
 
-while let next = try await iterator.next() {
+while let next = try await stream.next() {
 
 }
 ```
@@ -224,4 +215,6 @@ await withTaskGroup(of: Int.self) { taskGroup in
 }
 ```
 
-Similar results can be found for double `map`s. Proofing the efficiency for the source `stream`
+Similar results can be found for double `map`s.
+
+- Bug: However, there is a ~0.4ms overhead of using concurrent stream iterator.

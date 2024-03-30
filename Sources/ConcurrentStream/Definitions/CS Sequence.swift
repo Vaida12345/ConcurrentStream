@@ -7,7 +7,7 @@
 //
 
 
-
+/*
 /// A general Sequence based on ``ConcurrentStreamIterator``.
 ///
 /// This sequence expects ``ConcurrentStreamIterator/next()`` to be a O(*1*) operation.
@@ -23,27 +23,7 @@ public struct ConcurrentStreamSequence<Iterator>: ConcurrentStream where Iterato
     }
     
     /// Creates the asynchronous iterator that produces elements of this stream.
-    ///
-    /// An ``ConcurrentStreamIterator`` (stream, single-threaded) can be retrieved given ``makeAsyncIterator(sorted:)``. The unsorted iterator requires do not buffer and hence performs slightly better.
-    ///
-    /// The iterator is optimized, and overhead is kept minimum.
-    ///
-    /// ```swift
-    /// try await (1...1000)
-    ///     .stream
-    ///     .enumerate { index, value in
-    ///
-    ///     }
-    /// ```
-    ///
-    /// This performs the same as
-    ///
-    /// ```swift
-    /// for i in 1...1000 {
-    ///     
-    /// }
-    /// ```
-    ///
+    /// 
     /// - Parameters:
     ///   - sorted: Whether the iterator should produce the elements in order.
     @inlinable
@@ -61,3 +41,4 @@ public struct ConcurrentStreamSequence<Iterator>: ConcurrentStream where Iterato
     public typealias Element = Iterator.Element
     
 }
+*/
