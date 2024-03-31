@@ -1,8 +1,9 @@
 //
 //  ConcurrentUniqueStream.swift
-//
+//  The Concurrent Stream Module
 //
 //  Created by Vaida on 2024/3/31.
+//  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
 

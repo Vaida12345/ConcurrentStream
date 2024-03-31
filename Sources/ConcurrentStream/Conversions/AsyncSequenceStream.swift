@@ -1,6 +1,6 @@
 //
 //  ConcurrentAsyncSequenceStream.swift
-//  The Stratum Module - Concurrent Stream
+//  The Concurrent Stream Module
 //
 //  Created by Vaida on 6/1/23.
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
