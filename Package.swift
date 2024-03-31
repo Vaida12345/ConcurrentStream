@@ -13,8 +13,8 @@ let package = Package(
     ], products: [
         .library(name: "ConcurrentStream", targets: ["ConcurrentStream"]),
     ], targets: [
-        .target(name: "ConcurrentStream", swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]),
+        .target(name: "ConcurrentStream"),
         .executableTarget(name: "Client"),
-        .testTarget(name: "ConcurrentStreamTests", dependencies: ["ConcurrentStream"], swiftSettings: [.enableExperimentalFeature("StrictConcurrency")]),
+        .testTarget(name: "ConcurrentStreamTests", dependencies: ["ConcurrentStream"]),
     ]
 )

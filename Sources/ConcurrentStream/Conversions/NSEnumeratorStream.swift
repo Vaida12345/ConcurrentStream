@@ -1,16 +1,16 @@
 //
-//  ConcurrentStream NSEnumerator Iterator.swift
+//  ConcurrentNSEnumeratorStream.swift
 //  The Stratum Module - Concurrent Stream
 //
 //  Created by Vaida on 6/1/23.
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
-/*
+
 import Foundation
 
 
-private  final class ConcurrentStreamNSEnumeratorIterator<Element>: ConcurrentStreamIterator {
+private final class ConcurrentNSEnumeratorStream<Element>: ConcurrentStream {
     
     private var iterator: NSEnumerator
     
@@ -20,7 +20,7 @@ private  final class ConcurrentStreamNSEnumeratorIterator<Element>: ConcurrentSt
     }
     
     fileprivate func cancel() {
-        // does nothing
+        // do nothing
     }
     
     
@@ -37,8 +37,8 @@ extension NSEnumerator {
     ///
     /// - Complexity: O(*1*).
     public func stream<Element>(of type: Element.Type) -> some ConcurrentStream<Element> {
-        ConcurrentStreamSequence(iterator: ConcurrentStreamNSEnumeratorIterator(iterator: self))
+        ConcurrentNSEnumeratorStream(iterator: self)
     }
     
 }
-*/
+

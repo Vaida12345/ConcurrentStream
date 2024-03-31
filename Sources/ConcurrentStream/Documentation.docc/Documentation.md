@@ -6,10 +6,14 @@ The framework of ``ConcurrentStream/ConcurrentStream``.
 
 The ``ConcurrentStream`` aims to combine the functionality of execution in parallel and `AsyncSequence`.
 
-- Creation of a stream dispatches the work and returns immediately.
-- ``ConcurrentStream/ConcurrentStream/next()`` would wait for the work to complete.
+```swift
+let stream = (1...100).stream.map(heavyWork)
 
-- Warning: A stream is fragile, elements are discarded during traversal. Hence do never reuse a stream.
+while let next = try await stream.next() {
+    ...
+}
+```
+The `heavyWork`s are executed in parallel, while the completed ones are reported in order.
 
 
 ## Getting Started

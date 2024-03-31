@@ -6,6 +6,15 @@ A stream, where each block works concurrently if possible.
 
 The ``ConcurrentStream`` aims to combine the functionality of execution in parallel and `AsyncSequence`.
 
+```swift
+let stream = (1...100).stream.map(heavyWork)
+
+while let next = try await stream.next() {
+    ...
+}
+```
+The `heavyWork`s are executed in parallel, while the completed ones are reported in order.
+
 - Creation of a stream dispatches the work and returns immediately.
 - ``ConcurrentStream/ConcurrentStream/next()`` would wait for the work to complete.
 
@@ -30,7 +39,18 @@ The stream can be cancelled in three ways.
 
 This should cover the common use case. You can read details about the `ConcurrentStream` [here](<doc:Principle>).
 
-- Tip: There exists unavoidable overhead due to the use of `AsyncStream` to escape the results of `taskGroup`. Hence aim to reduce the number of `map`-like operations queued.
+### Overhead
+
+There are generally two kinds of operations:
+
+- ``map(_:)``-like, where a `taskGroup` is created and dispatched upon invocation.
+- ``compacted()``-like, where a `taskGroup` is not generated. These operations are lightweight and do not involve additional overhead associated with being `async`.
+
+In the first scenario, unavoidable overhead arises from the use of `AsyncStream` to capture the results of the `taskGroup` and the `taskGroup` itself. Therefore, it is advisable to minimize the number of `map`-like operations queued.
+
+- Warning: All methods that take a closure as an argument will create `taskGroup`s to execute the closure.
+- Tip: You can determine if a `taskGroup` has been instantiated (thereby causing significant overhead) by examining the function signature. It is necessary to use `await` on methods where a `taskGroup` is created; conversely, `await` is not required when a `taskGroup` has not been instantiated.
+
 
 ## Implementation Notes
 ### Class Protocol
@@ -82,7 +102,6 @@ A new implementation addressing will come out with Swift6.0.
 ## Topics
 
 ### Creation of stream
-
 The ``ConcurrentStream`` does not offer a direct way of creation. You would always need to bridge from other structures.
 
 - ``Swift/Sequence/stream``
@@ -90,6 +109,11 @@ The ``ConcurrentStream`` does not offer a direct way of creation. You would alwa
 ### Obtaining elements explicitly
 Returns the next element in the iterator. The elements will always be returned in the order they were submitted.
 - ``next()``
+- ``forEach(_:)``
+
+### Converting stream
+- ``sequence``
+- ``async``
 
 
 ### Cancelling stream
@@ -98,68 +122,19 @@ This is the explicit way of canceling a stream. A stream would be canceled expli
 
 - ``cancel()``
 
-### Mapping
 
-- ``map(to:_:)``
-- ``compactMap(to:_:)``
-- ``flatMap(toStreamOf:_:)-3dz37``
+### Lightweight Operations
+These operations are lightweight and do not involve additional overhead associated with being `ConcurrentStream`. This is also indicated by the lack of `await` in the function call.
+
 - ``compacted()``
 - ``unique()``
+- ``flatten()``
+- ``+(_:_:)``
 
 
-### min and max
+### Mappings
+These operations involve creation of `taskGroup` in each function call.
 
-- ``min()``
-- ``min(by:)``
-- ``max()``
-- ``max(by:)``
-
-
-### Finding Element
-
-- ``contains(_:)``
-- ``contains(where:)``
-- ``allSatisfy(_:)``
-- ``allEqual()``
-- ``allEqual(_:)``
-
-
-### Filtering
-
-- ``filter(_:)``
-- ``drop(while:)``
-
-
-### Obtaining Results
-
-- ``count(where:)``
-- ``reduce(_:_:)``
-- ``reduce(into:_:)``
-
-
-### Enumeration
-
-- ``async``
-- ``sequence``
-- ``forEach(_:)``
-- ``enumerate(_:)``
-
-
-### Iterator
-
-- ``makeAsyncIterator(sorted:)``
-- ``ConcurrentStreamIterator``
-
-
-### Iterator to Sequence
-
-- ``ConcurrentStreamSequence``
-
-
-### Methods of same signature
-
-- <doc:AnyConcurrentStream>
-
-### Auxiliary
-
-- <doc:ConcurrentStreamAuxiliary>
+- ``map(_:)``
+- ``compactMap(_:)``
+- ``flatMap(_:)``

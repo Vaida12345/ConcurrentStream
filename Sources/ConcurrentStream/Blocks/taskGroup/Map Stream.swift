@@ -10,7 +10,7 @@
 private final class ConcurrentMapStream<Element, SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream {
     
     /// The source stream
-    fileprivate var source: SourceStream
+    private let source: SourceStream
     
     
     /// The iterator of `taskGroup`
@@ -108,7 +108,15 @@ private final class ConcurrentMapStream<Element, SourceStream>: ConcurrentStream
 
 extension ConcurrentStream {
     
-    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> T) async -> some ConcurrentStream {
+    /// Creates a concurrent stream that maps the given closure over the stream’s elements.
+    ///
+    /// The `taskGroup` is created and dispatched; this function returns immediately.
+    ///
+    /// - Parameters:
+    ///   - transform: A mapping closure. `transform` accepts an element of this sequence as its parameter and returns a transformed value of the same or of a different type.
+    ///
+    /// - Complexity: The process entails creating a new `taskGroup`.
+    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> T) async -> some ConcurrentStream<T> {
         await ConcurrentMapStream(source: consume self, work: transform)
     }
     

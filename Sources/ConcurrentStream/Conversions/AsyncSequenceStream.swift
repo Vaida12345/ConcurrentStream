@@ -1,5 +1,5 @@
 //
-//  ConcurrentSequenceStream.swift
+//  ConcurrentAsyncSequenceStream.swift
 //  The Stratum Module - Concurrent Stream
 //
 //  Created by Vaida on 6/1/23.
@@ -7,16 +7,16 @@
 //
 
 
-private final class ConcurrentSequenceStream<Source>: ConcurrentStream where Source: Sequence {
+private final class ConcurrentAsyncSequenceStream<Source>: ConcurrentStream where Source: AsyncSequence {
     
-    private var iterator: Source.Iterator
+    private var iterator: Source.AsyncIterator
     
     fileprivate init(source: Source) {
-        self.iterator = source.makeIterator()
+        self.iterator = source.makeAsyncIterator()
     }
     
-    fileprivate func next() -> Element? {
-        iterator.next()
+    fileprivate func next() async throws -> Element? {
+        try await iterator.next()
     }
     
     fileprivate func cancel() {
@@ -28,9 +28,9 @@ private final class ConcurrentSequenceStream<Source>: ConcurrentStream where Sou
 }
 
 
-extension Sequence {
+extension AsyncSequence {
     
-    /// Creates a stream from a `Sequence`.
+    /// Creates a stream from an `AsyncSequence`.
     ///
     /// > Example:
     /// >
@@ -42,13 +42,8 @@ extension Sequence {
     /// - Returns: The iterator for the sequence is created before returning.
     ///
     /// - Complexity: O(*1*).
-    ///
-    /// ## Topics
-    /// ### See Also
-    /// - ``_Concurrency/AsyncSequence/stream``
-    /// - ``Foundation/NSEnumerator/stream(of:)``
     public var stream: some ConcurrentStream<Element> {
-        ConcurrentSequenceStream(source: self)
+        ConcurrentAsyncSequenceStream(source: self)
     }
     
 }
