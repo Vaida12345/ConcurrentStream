@@ -1,0 +1,32 @@
+{
+  "configurations" : [
+    {
+      "id" : "BBF19FE9-70B3-47BD-B3B7-0D4185E1A806",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:",
+      "identifier" : "Client",
+      "name" : "Client"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "skippedTests" : [
+        "ConcurrentStreamTests\/testCancel()"
+      ],
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "ConcurrentStreamTests",
+        "name" : "ConcurrentStreamTests"
+      }
+    }
+  ],
+  "version" : 1
+}

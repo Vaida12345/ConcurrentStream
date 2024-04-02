@@ -17,22 +17,28 @@ extension ConcurrentStream {
     @inlinable
     public var sequence: Array<Element> {
         consuming get async throws {
-            var array: [Element] = []
-            
-            while let next = try await self.next() {
-                array.append(next)
+            let stream = consume self
+            return try await withTaskCancellationHandler {
+                var array: [Element] = []
+                
+                while let next = try await stream.next() {
+                    array.append(next)
+                }
+                
+                return array
+            } onCancel: {
+                stream.cancel()
             }
-            
-            return array
+
         }
     }
     
     /// Calls the given closure on each element in the stream using a `taskGroup`.
     ///
-    /// The `body` is called concurrently. To call in serial, use ``async`` instead.
+    /// The `body` is called concurrently. To call in serial, `while`-loop on ``next()`` instead.
     ///
     /// > Tip:
-    /// > Due to the design of ``ConcurrentStream``, instead of looping and adding tasks to a `taskGroup`, you could use the `forEach` function.
+    /// > Due to the design of ``ConcurrentStream``, instead of looping and adding tasks to a `taskGroup`, you could use the this function.
     /// > ```swift
     /// > await (0...index).stream.forEach(...)
     /// > ```

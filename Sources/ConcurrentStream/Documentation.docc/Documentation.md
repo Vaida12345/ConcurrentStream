@@ -34,6 +34,8 @@ You can add this framework as a dependency to your Xcode project by clicking Fil
 ~/Library/Mobile Documents/com~apple~CloudDocs/DataBase/Projects/Packages/ConcurrentStream
 ```
 
+> Tip: The `ConcurrentStream` is part of the `Stratum` framework. If you have declared `Stratum` as dependency, you can use `ConcurrentStream` by simply `import`ing the framework.
+
 
 ## Topics
 

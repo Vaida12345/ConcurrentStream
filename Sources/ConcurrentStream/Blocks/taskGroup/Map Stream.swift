@@ -45,13 +45,13 @@ private final class ConcurrentMapStream<Element, SourceStream>: ConcurrentStream
                             return
                         }
                         
-//                        print("add task \(_count)")
+                        print("add task \(_count)")
                         group.addTask {
                             await Task.yield()
                             try Task.checkCancellation()
                             
                             let next = try await (_count, work(value))
-//                            print("finished \(_count)")
+                            print("finished \(_count)")
                             continuation.yield(next)
                         }
                         
