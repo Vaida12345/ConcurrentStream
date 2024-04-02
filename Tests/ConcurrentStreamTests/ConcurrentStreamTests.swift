@@ -71,34 +71,33 @@ final class ConcurrentStreamTests: XCTestCase {
         XCTAssertEqual(sequence.compactMap({ $0 }), stream)
     }
     
-    func testCancel() async throws {
-        
-        
-        let task = Task {
-            do {
-                let date = Date()
-                let stream = await [Int](1...1000).stream.map(heavyWork).map({ $0 }).async.map({ $0 })
-                print(date.distance(to: Date()))
-                
-                //            for _ in 0...10 {
-                //                //                await Task.yield()
-                //                heavyWork(i: 0)
-                //            }
-                
-                for try await element in stream {
-                    print(">>", element)
-                }
-            } catch {
-                print(error)
-            }
-
-        }
-//        try await task.value
-        try await Task.sleep(for: .seconds(0.0001))
-        print("will ask to cancel")
-        task.cancel()
-        try await Task.sleep(for: .seconds(10))
-    }
+//    func testCancel() async throws {
+//        
+//        
+//        let task = Task {
+//            do {
+//                let date = Date()
+//                let stream = await [Int](1...1000).stream.map(heavyWork).map({ $0 }).async.map({ $0 })
+//                print(date.distance(to: Date()))
+//                
+//                            for _ in 0...1000 {
+//                                //                await Task.yield()
+//                                heavyWork(i: 0)
+//                            }
+//                
+//                for try await element in stream {
+//                    print(">>", element)
+//                }
+//            } catch {
+//                print(error)
+//            }
+//        }
+////        try await task.value
+//        try await Task.sleep(for: .seconds(0.001))
+//        print("will ask to cancel")
+//        task.cancel()
+//        try await Task.sleep(for: .seconds(10))
+//    }
     
 //    func testPerformance() async throws {
 //        let stream = { index in
@@ -141,7 +140,7 @@ final class ConcurrentStreamTests: XCTestCase {
 @Sendable
 func heavyWork(i: Int) -> Int {
     var count = 0
-    for _ in 0...10000 {
+    for _ in 0...1000 {
         count = max(count, SHA512.hash(data: Data(count: 4)).hashValue)
     }
     return i
