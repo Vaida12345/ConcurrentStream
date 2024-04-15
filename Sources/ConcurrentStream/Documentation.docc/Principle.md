@@ -1,6 +1,6 @@
 # Principle
 
-This summary of what ``ConcurrentStream`` aims to achieve.
+This summary of what `ConcurrentStream` aims to achieve.
 
 
 ## TaskGroup
@@ -118,12 +118,12 @@ The drawback is that `TaskGroup` is only available in the closure, similar to th
 
 In this way, a `TaskGroup` could never be passed outside its function. Hence, it is impossible to treat it as `Array` or `some AsyncSequence`.
 
-The ``ConcurrentStream`` aims to achieve the same, while making it available outside the closure.
+The `ConcurrentStream` aims to achieve the same, while making it available outside the closure.
 
 
 ## ConcurrentStream
 
-The ``ConcurrentStream`` aims to combine `DispatchQueue.perform` and `AsyncSequence`.
+The `ConcurrentStream` aims to combine `DispatchQueue.perform` and `AsyncSequence`.
 
 - Creation of a stream dispatches the work and returns immediately.
 - ``ConcurrentStream/ConcurrentStream/next()`` would wait for the work to complete.
