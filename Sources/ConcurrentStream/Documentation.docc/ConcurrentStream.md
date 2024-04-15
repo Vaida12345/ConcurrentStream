@@ -128,7 +128,7 @@ These operations are lightweight and do not involve additional overhead associat
 
 - ``compacted()``
 - ``unique()``
-- ``flatten()``
+- ``flatten()-7xbsj``
 - ``+(_:_:)``
 
 
@@ -137,4 +137,4 @@ These operations involve creation of `taskGroup` in each function call.
 
 - ``map(_:)``
 - ``compactMap(_:)``
-- ``flatMap(_:)``
+- ``flatMap(_:)-8e3lh``

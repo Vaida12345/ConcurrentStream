@@ -44,6 +44,9 @@ final class ConcurrentStreamTests: XCTestCase {
         let sequence = [Int](0...100).shuffled()
         let stream = try await sequence.stream.flatMap({ (0...$0).stream }).sequence
         XCTAssertEqual(sequence.flatMap({ (0...$0) }), stream)
+        
+        let stream2 = try await sequence.stream.flatMap({ (0...$0) }).sequence
+        XCTAssertEqual(sequence.flatMap({ (0...$0) }), stream2)
     }
     
     func testForEach() async throws {
