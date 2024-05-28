@@ -14,7 +14,7 @@ let package = Package(
         .library(name: "ConcurrentStream", targets: ["ConcurrentStream"]),
     ], targets: [
         .target(name: "ConcurrentStream"),
-        .executableTarget(name: "Client"),
+        .executableTarget(name: "Client", dependencies: ["ConcurrentStream"]),
         .testTarget(name: "ConcurrentStreamTests", dependencies: ["ConcurrentStream"]),
     ]
 )
