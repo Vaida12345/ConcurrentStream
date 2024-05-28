@@ -63,6 +63,6 @@ for i in  (1...10) {
 
 With arguably similar performance.
 
-** To read more about choice and implementation details, see [Principle](/Sources/ConcurrentStream/Documentation.docc/Principle.md) **
+**To read more about choice and implementation details, see [Principle](/Sources/ConcurrentStream/Documentation.docc/Principle.md)**
 
 
