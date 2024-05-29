@@ -20,13 +20,18 @@ fileprivate final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream w
     }
     
     func next() async throws -> Element? {
-        guard let next = try await source.next() else { return nil }
-        let hash = next.hashValue
-        if set.insert(hash).inserted {
-            return next
+        do {
+            guard let next = try await source.next() else { return nil }
+            let hash = next.hashValue
+            if set.insert(hash).inserted {
+                return next
+            }
+            
+            return try await self.next()
+        } catch {
+            self.cancel()
+            throw error
         }
-        
-        return try await self.next()
     }
     
     func cancel() {

@@ -20,18 +20,23 @@ fileprivate final class ConcurrentFlattenStream<SourceStream>: ConcurrentStream 
     }
     
     func next() async throws -> Element? {
-        if let next = try await stream?.next() {
-            return next
+        do {
+            if let next = try await stream?.next() {
+                return next
+            }
+            
+            // the current stream is drain, get next one
+            guard let nextStream = try await source.next() else {
+                // no next stream, exit
+                return nil
+            }
+            
+            self.stream = nextStream
+            return try await self.next()
+        } catch {
+            self.cancel()
+            throw error
         }
-        
-        // the current stream is drain, get next one
-        guard let nextStream = try await source.next() else {
-            // no next stream, exit
-            return nil
-        }
-        
-        self.stream = nextStream
-        return try await self.next()
     }
     
     func cancel() {

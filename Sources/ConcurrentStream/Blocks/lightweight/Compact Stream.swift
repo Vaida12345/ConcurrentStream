@@ -17,12 +17,17 @@ fileprivate final class ConcurrentCompactedStream<Unwrapped, SourceStream>: Conc
     }
     
     func next() async throws -> Element? {
-        guard let next = try await source.next() else { return nil } // reaches end
-        if let next {
-            // unwraps `next`
-            return next
-        } else {
-            return try await self.next()
+        do {
+            guard let next = try await source.next() else { return nil } // reaches end
+            if let next {
+                // unwraps `next`
+                return next
+            } else {
+                return try await self.next()
+            }
+        } catch {
+            self.cancel()
+            throw error
         }
     }
     

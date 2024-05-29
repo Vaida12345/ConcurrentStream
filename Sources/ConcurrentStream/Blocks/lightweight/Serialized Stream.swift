@@ -15,8 +15,13 @@ private final class ConcurrentSerializedStream<LHS, RHS>: ConcurrentStream where
     
     
     fileprivate func next() async throws -> Element? {
-        if let lhs = try await lhs.next() { return lhs }
-        return try await rhs.next()
+        do {
+            if let lhs = try await lhs.next() { return lhs }
+            return try await rhs.next()
+        } catch {
+            self.cancel()
+            throw error
+        }
     }
     
     fileprivate func cancel() {
