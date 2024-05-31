@@ -40,6 +40,16 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "OpenAITests"
+               BuildableName = "OpenAITests"
+               BlueprintName = "OpenAITests"
+               ReferencedContainer = "container:../OpenAI">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
