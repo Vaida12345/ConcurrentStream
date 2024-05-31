@@ -116,6 +116,21 @@ extension ConcurrentStream {
     ///   - transform: A mapping closure. `transform` accepts an element of this sequence as its parameter and returns a transformed value of the same or of a different type.
     ///
     /// - Complexity: The process entails creating a new `taskGroup`.
+    ///
+    /// > Experiment:
+    /// > There exists a ~3.6੫s overhead for each element. (Compared to ~500ps for each element of a sequence.)
+    /// >
+    /// > **The breakdown could be:**
+    /// >
+    /// > - Bridge from sequence to stream: ~320ns
+    /// >
+    /// > - Use of `AsyncStream`: ~1.6੫s
+    /// >
+    /// > - Use of `TaskGroup`: ~1.1੫s
+    /// >
+    /// > - Use of `Dictionary` as buffer: ~50ns
+    /// >
+    /// > *Please also note that this benchmark could be inaccuracy due to the nature of concurrency.*
     public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> T) async -> some ConcurrentStream<T> {
         await ConcurrentMapStream(source: consume self, work: transform)
     }
