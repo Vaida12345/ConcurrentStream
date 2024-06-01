@@ -24,6 +24,16 @@ final class ConcurrentStreamTests: XCTestCase {
         XCTAssertEqual(sequence, async)
     }
     
+    func testCompactMap() async throws {
+        let sequence = [Int](0...100).shuffled()
+        let compactMap = try await sequence.stream.compactMap({ $0 % 2 == 0 ? nil : $0 }).sequence
+        let mapCompact = try await sequence.stream.map({ $0 % 2 == 0 ? nil : $0 }).compacted().sequence
+        let compactSequence = sequence.compactMap({ $0 % 2 == 0 ? nil : $0  })
+        
+        XCTAssertEqual(compactMap, mapCompact)
+        XCTAssertEqual(compactMap, compactSequence)
+    }
+    
     func testsUniqueSequence() async throws {
         let sequence = [Int](0...100).shuffled()
         let async = try await sequence.stream.unique().sequence
@@ -32,12 +42,6 @@ final class ConcurrentStreamTests: XCTestCase {
         let sequenceWithRepeat = [Int](0...100).shuffled() + [Int](0...100).shuffled()
         let asyncWithRepeat = try await sequenceWithRepeat.stream.unique().sequence
         XCTAssertEqual(Set(sequenceWithRepeat), Set(asyncWithRepeat))
-    }
-    
-    func testCompactMap() async throws {
-        let sequence = [Int](0...100).shuffled()
-        let stream = try await sequence.stream.compactMap({ $0 % 2 == 0 ? nil : $0 }).sequence
-        XCTAssertEqual(sequence.compactMap({ $0 % 2 == 0 ? nil : $0 }), stream)
     }
     
     func testFlatMap() async throws {

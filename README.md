@@ -56,7 +56,7 @@ for i in try await (1...10).stream.sequence {
 
 Would provide exactly the same as 
 ```swift
-for i in  (1...10) {
+for i in (1...10) {
     print(i)
 }
 ```

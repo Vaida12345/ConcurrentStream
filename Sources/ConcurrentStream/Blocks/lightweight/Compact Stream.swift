@@ -47,6 +47,8 @@ extension ConcurrentStream {
     /// The overhead of this method is kept minimum. It would perform the same as `Sequence.compacted()`.
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
+    ///
+    /// - Tip: `map(_:).compacted()` would perform the same as `compactMap(_:)`, with similar performance.
     public consuming func compacted<Unwrapped>() -> some ConcurrentStream<Unwrapped> where Element == Unwrapped? {
         ConcurrentCompactedStream(source: self)
     }

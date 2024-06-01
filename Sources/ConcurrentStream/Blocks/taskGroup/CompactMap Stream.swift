@@ -121,6 +121,8 @@ extension ConcurrentStream {
     ///
     /// - Complexity: The process entails creating a new `taskGroup`.
     ///
+    /// - Tip: `map(_:).compacted()` would perform the same as `compactMap(_:)`, with similar performance.
+    ///
     /// ## Topics
     /// ### Lightweight Equivalent
     /// The lightweight equivalent performs much better when transformation is not required.
