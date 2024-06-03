@@ -156,17 +156,6 @@ final class ConcurrentStreamTests: XCTestCase {
     
 }
 
-
-@Sendable
-func heavyWork(i: Int) -> Int {
-    var count = 0
-    for _ in 0...1000 {
-        count = max(count, SHA512.hash(data: Data(count: 4)).hashValue)
-    }
-    return i
-}
-
-
 private extension AsyncSequence {
     
     var allObjects: [Element] {

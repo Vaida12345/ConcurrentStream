@@ -138,3 +138,9 @@ These operations involve creation of `taskGroup` in each function call.
 - ``map(_:)``
 - ``compactMap(_:)``
 - ``flatMap(_:)-8e3lh``
+
+
+### Excluding Elements
+Note that there is no way to retrieve the excluded elements. These operation themselves are lightweight.
+
+- ``filter(_:)``
