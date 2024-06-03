@@ -78,6 +78,19 @@ final class ConcurrentStreamTests: XCTestCase {
         XCTAssertEqual(sequence.compactMap({ $0 }), stream)
     }
     
+    func testFilters() async throws {
+        let sequence = [Int](0...100).shuffled().filter({ $0.isMultiple(of: 2) })
+        let stream = try await sequence.stream.filter({ $0.isMultiple(of: 2) }).sequence
+        XCTAssertEqual(sequence, stream)
+    }
+    
+    func testNSEnumerator() async throws {
+        let sequence = [Int](0...100).shuffled()
+        let enumerator = NSArray(array: sequence).objectEnumerator()
+        let stream = try await NSArray(array: sequence).objectEnumerator().stream(of: Int.self).sequence
+        XCTAssertEqual((enumerator.allObjects as! [Int]), stream)
+    }
+    
 //    func testCancel() async throws {
 //        
 //        

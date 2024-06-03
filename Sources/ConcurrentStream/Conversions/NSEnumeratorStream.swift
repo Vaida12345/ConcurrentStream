@@ -35,8 +35,10 @@ extension NSEnumerator {
     
     /// Creates a stream from an async sequence.
     ///
+    /// - Important: This function would consume and deplete the enumerator.
+    ///
     /// - Complexity: O(*1*).
-    public func stream<Element>(of type: Element.Type) -> some ConcurrentStream<Element> {
+    public consuming func stream<Element>(of type: Element.Type) -> some ConcurrentStream<Element> {
         ConcurrentNSEnumeratorStream(iterator: self)
     }
     
