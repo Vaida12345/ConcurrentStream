@@ -7,7 +7,7 @@
 //
 
 
-fileprivate final class ConcurrentFlattenStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: ConcurrentStream {
+fileprivate final class ConcurrentFlattenStream<SourceStream, Failure, ChildFailure>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: ConcurrentStream, Failure: Error, ChildFailure: Error, SourceStream.Element.Failure == ChildFailure {
     
     /// The source stream
     private let source: SourceStream
@@ -35,7 +35,7 @@ fileprivate final class ConcurrentFlattenStream<SourceStream>: ConcurrentStream 
             return try await self.next()
         } catch {
             self.cancel()
-            throw error
+            throw error as! Failure
         }
     }
     
@@ -45,22 +45,59 @@ fileprivate final class ConcurrentFlattenStream<SourceStream>: ConcurrentStream 
     
     typealias Element = SourceStream.Element.Element
     
-    typealias Failure = any Error
-    
 }
 
 
 extension ConcurrentStream {
     
-    /// Returns a compact mapped stream.
+    // MARK: (SourceStream.Failure: some Error, ChildFailure: some Error)
+    /// Returns a flat mapped stream.
     ///
     /// The overhead of this method is kept minimum. It would perform the same as `Sequence.flatten()`.
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
     ///
-    /// - Throws: Sadly, there is no way to obtain the thrown error, even with typed throws.
-    public consuming func flatten<T>() -> some ConcurrentStream<T, any Error> where Element: ConcurrentStream<T, any Error> {
-        ConcurrentFlattenStream(source: consume self)
+    /// ## Topics
+    /// ### Variants
+    /// These variants are implementation details, which are employed to ensure the proper throwing.
+    /// - ``ConcurrentStream/flatten()-9xfyl``
+    /// - ``ConcurrentStream/flatten()-618fa``
+    /// - ``ConcurrentStream/flatten()-4mc14``
+    ///
+    /// ### Sequence Variant
+    /// The following is used to ensure the capability with `Sequence`
+    /// - ``ConcurrentStream/flatten()-6zgjd``
+    public consuming func flatten<T, E>() -> some ConcurrentStream<T, any Error> where Element: ConcurrentStream<T, E>, E: Error {
+        ConcurrentFlattenStream<Self, any Error, E>(source: consume self)
+    }
+    
+    // MARK: (SourceStream.Failure: some Error, ChildFailure: Never)
+    /// Returns a flat mapped stream.
+    ///
+    /// This is a variant of ``ConcurrentStream/flatten()-3mp1s``
+    public consuming func flatten<T>() -> some ConcurrentStream<T, Failure> where Element: ConcurrentStream<T, Never> {
+        ConcurrentFlattenStream<Self, Failure, Never>(source: consume self)
+    }
+    
+}
+
+
+extension ConcurrentStream where Failure == Never {
+    
+    // MARK: (SourceStream.Failure: Never, ChildFailure: some Error)
+    /// Returns a flat mapped stream.
+    ///
+    /// This is a variant of ``ConcurrentStream/flatten()-3mp1s``
+    public consuming func flatten<T, E>() -> some ConcurrentStream<T, E> where Element: ConcurrentStream<T, E>, E: Error {
+        ConcurrentFlattenStream<Self, E, E>(source: consume self)
+    }
+    
+    // MARK: (SourceStream.Failure: Never, ChildFailure: Never)
+    /// Returns a flat mapped stream.
+    ///
+    /// This is a variant of ``ConcurrentStream/flatten()-3mp1s``
+    public consuming func flatten<T>() -> some ConcurrentStream<T, Never> where Element: ConcurrentStream<T, Never> {
+        ConcurrentFlattenStream<Self, Never, Never>(source: consume self)
     }
     
 }

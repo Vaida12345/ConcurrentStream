@@ -7,7 +7,7 @@
 //
 
 
-private final class ConcurrentSerializedStream<LHS, RHS>: ConcurrentStream where LHS: ConcurrentStream, RHS: ConcurrentStream, LHS.Element == RHS.Element {
+private final class ConcurrentSerializedStream<LHS, RHS, Failure>: ConcurrentStream where LHS: ConcurrentStream, RHS: ConcurrentStream, LHS.Element == RHS.Element, Failure: Error {
     
     private let lhs: LHS
     
@@ -20,7 +20,7 @@ private final class ConcurrentSerializedStream<LHS, RHS>: ConcurrentStream where
             return try await rhs.next()
         } catch {
             self.cancel()
-            throw error
+            throw error as! Failure
         }
     }
     
@@ -37,13 +37,12 @@ private final class ConcurrentSerializedStream<LHS, RHS>: ConcurrentStream where
     
     typealias Element = LHS.Element
     
-    typealias Failure = any Error
-    
 }
 
 
 extension ConcurrentStream {
-
+    
+    // MARK: (lhs: some Error, rhs: some Error)
     /// Creates a new stream by concatenating the elements of two streams.
     ///
     /// The overhead of this method is kept minimum. It would perform the same as `Sequence.+(:_:_)`.
@@ -54,10 +53,43 @@ extension ConcurrentStream {
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
     ///
-    /// - Throws: Sadly, there is no way to obtain the thrown error, even with typed throws.
+    /// ## Topics
+    /// ### Variants
+    /// These variants are implementation details, which are employed to ensure the proper throwing.
+    /// - ``ConcurrentStream/+(_:_:)-25x9z``
+    /// - ``ConcurrentStream/+(_:_:)-8aocz``
+    /// - ``ConcurrentStream/+(_:_:)-4p98m``
     public static func + (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, some Error>) -> some ConcurrentStream<Element, any Error> {
+        ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
+    }
+    
+    // MARK: (lhs: some Error, rhs: Never)
+    /// Creates a new stream by concatenating the elements of two streams.
+    ///
+    /// This is a variant of ``ConcurrentStream/+(_:_:)-7m6k2``
+    public static func + (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, Never>) -> some ConcurrentStream<Element, Failure> {
         ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
     }
 
 }
 
+
+extension ConcurrentStream where Failure == Never {
+    
+    // MARK: (lhs: Never, rhs: some Error)
+    /// Creates a new stream by concatenating the elements of two streams.
+    ///
+    /// This is a variant of ``ConcurrentStream/+(_:_:)-7m6k2``
+    public static func +<E> (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, E>) -> some ConcurrentStream<Element, E> where E: Error {
+        ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
+    }
+    
+    // MARK: (lhs: some Error, rhs: Never)
+    /// Creates a new stream by concatenating the elements of two streams.
+    ///
+    /// This is a variant of ``ConcurrentStream/+(_:_:)-7m6k2``
+    public static func + (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, Never>) -> some ConcurrentStream<Element, Never> {
+        ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
+    }
+    
+}

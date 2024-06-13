@@ -40,6 +40,16 @@ extension ConcurrentStream {
     
     /// Calls the given closure on each element in the stream using a `taskGroup`.
     ///
+    /// ### Closure parameters
+    /// `index`
+    /// 
+    /// The index of the element.
+    ///
+    /// `element`
+    ///
+    /// The contained value of the element.
+    ///
+    /// ### Discussion
     /// The `body` is called concurrently. To call in serial, `while`-loop on ``next()`` instead.
     ///
     /// > Tip:
@@ -58,12 +68,11 @@ extension ConcurrentStream {
     ///
     /// - Complexity: A `taskGroup` is created to enumerate the values.
     ///
-    /// - Returns: The function is returned after the `taskGroup` completes.
+    /// > Returns:
+    /// > The function is returned after the `taskGroup` completes.
     ///
     /// - Parameters:
     ///   - body: A closure that takes an element of the sequence as a parameter.
-    ///   - index: The index of the element.
-    ///   - element: The contained value of the element.
     @inlinable
     public func forEach(_ body: @escaping (_ index: Int, _ element: Element) async throws -> Void) async throws {
         if #available(macOS 14, iOS 17, watchOS 10, tvOS 17, *) {

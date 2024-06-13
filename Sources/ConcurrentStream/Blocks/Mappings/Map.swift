@@ -1,5 +1,5 @@
 //
-//  ConcurrentMapNeverThrowStream.swift
+//  ConcurrentMapStream.swift
 //  The Concurrent Stream Module
 //
 //  Created by Vaida on 6/1/23.
@@ -7,7 +7,8 @@
 //
 
 
-private final class ConcurrentMapNeverThrowStream<Element, SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Failure == Never {
+/// The primary associative values are: The returned element, The source stream, the error that this stream throws, the error that the work closure throws.
+fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure>: ConcurrentStream where SourceStream: ConcurrentStream, TransformFailure: Error, Failure: Error {
     
     /// The source stream
     private let source: SourceStream
@@ -23,11 +24,11 @@ private final class ConcurrentMapNeverThrowStream<Element, SourceStream>: Concur
     private var index = 0
     
     /// The task containing the `TaskGroup`
-    private var task: Task<Void, Never>?
+    private var task: Task<Void, any Error>?
     
     
     
-    fileprivate init(source: SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async -> Element) async {
+    init(source: SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async throws(TransformFailure) -> Element) async {
         self.source = source
         let (_stream, continuation) = AsyncThrowingStream.makeStream(of: Word.self)
         self.base = _stream.makeAsyncIterator()
@@ -36,7 +37,7 @@ private final class ConcurrentMapNeverThrowStream<Element, SourceStream>: Concur
             do {
                 try await withThrowingTaskGroup(of: Void.self) { group in
                     var count = 0
-                    while let value = await source.next() {
+                    while let value = try await source.next() {
                         let _count = count
                         
                         await Task.yield()
@@ -50,7 +51,7 @@ private final class ConcurrentMapNeverThrowStream<Element, SourceStream>: Concur
                             await Task.yield()
                             try Task.checkCancellation()
                             
-                            let next = await (_count, work(value))
+                            let next = try await (_count, work(value))
 //                            print("finished \(_count)")
                             continuation.yield(next)
                         }
@@ -72,7 +73,7 @@ private final class ConcurrentMapNeverThrowStream<Element, SourceStream>: Concur
     }
     
     /// Access the next element in the stream. `wait`ing is built-in.
-    public func next() async -> Element? {
+    public func next() async throws(Failure) -> Element? {
         do {
             let index = index
             while _buffer[index] == nil {
@@ -91,7 +92,7 @@ private final class ConcurrentMapNeverThrowStream<Element, SourceStream>: Concur
             return value
         } catch {
             self.cancel()
-            return nil // only time to throw is when the task is cancelled.
+            throw error as! Failure
         }
     }
     
@@ -108,6 +109,7 @@ private final class ConcurrentMapNeverThrowStream<Element, SourceStream>: Concur
 
 extension ConcurrentStream {
     
+    // MARK: (SourceStream.Failure: some Error, TransformFailure: some Error)
     /// Creates a concurrent stream that maps the given closure over the stream’s elements.
     ///
     /// The `taskGroup` is created and dispatched; this function returns immediately.
@@ -116,8 +118,6 @@ extension ConcurrentStream {
     ///   - transform: A mapping closure. `transform` accepts an element of this sequence as its parameter and returns a transformed value of the same or of a different type.
     ///
     /// - Complexity: The process entails creating a new `taskGroup`.
-    ///
-    /// - Throws: Sadly, there is no way to obtain the thrown error, even with typed throws.
     ///
     /// > Experiment:
     /// > There exists a ~3.6੫s overhead for each element. (Compared to ~500ps for each element of a sequence.)
@@ -133,8 +133,46 @@ extension ConcurrentStream {
     /// > - Use of `Dictionary` as buffer: ~50ns
     /// >
     /// > *Please also note that this benchmark could be inaccuracy due to the nature of concurrency.*
+    ///
+    /// ## Topics
+    /// ### Variants
+    /// These variants are implementation details, which are employed to ensure the proper throwing.
+    ///
+    /// - ``ConcurrentStream/map(_:)-o7b9``
+    /// - ``ConcurrentStream/map(_:)-4rkgy``
+    /// - ``ConcurrentStream/map(_:)-8qjns``
+    public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> T) async -> some ConcurrentStream<T, any Error> where E: Error {
+        await ConcurrentMapStream<T, Self, any Error, E>(source: self, work: transform) // self cannot be consumed
+    }
+    
+    // MARK: (SourceStream.Failure: some Error, TransformFailure: Never)
+    /// Creates a concurrent stream that maps the given closure over the stream’s elements.
+    ///
+    /// This is a variant of ``ConcurrentStream/map(_:)-4q8b6``
+    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> T) async -> some ConcurrentStream<T, Failure> {
+        await ConcurrentMapStream<T, Self, Failure, Never>(source: self, work: transform) // self cannot be consumed
+    }
+    
+}
+
+
+
+extension ConcurrentStream where Failure == Never {
+    
+    // MARK: (SourceStream.Failure: Never, TransformFailure: some Error)
+    /// Creates a concurrent stream that maps the given closure over the stream’s elements.
+    ///
+    /// This is a variant of ``ConcurrentStream/map(_:)-4q8b6``
+    public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> T) async -> some ConcurrentStream<T, E> where E: Error {
+        await ConcurrentMapStream<T, Self, E, E>(source: self, work: transform)
+    }
+    
+    // MARK: (SourceStream.Failure: Never, TransformFailure: Never)
+    /// Creates a concurrent stream that maps the given closure over the stream’s elements.
+    ///
+    /// This is a variant of ``ConcurrentStream/map(_:)-4q8b6``
     public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> T) async -> some ConcurrentStream<T, Never> where Failure == Never {
-        await ConcurrentMapNeverThrowStream(source: self, work: transform) // self cannot be consumed
+        await ConcurrentMapStream(source: self, work: transform) // self cannot be consumed
     }
     
 }

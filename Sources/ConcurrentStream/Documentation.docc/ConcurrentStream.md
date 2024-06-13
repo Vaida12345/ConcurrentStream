@@ -43,7 +43,7 @@ This should cover the common use case. You can read details about the `Concurren
 
 There are generally two kinds of operations:
 
-- ``map(_:)``-like, where a `taskGroup` is created and dispatched upon invocation.
+- ``map(_:)-4q8b6``-like, where a `taskGroup` is created and dispatched upon invocation.
 - ``compacted()``-like, where a `taskGroup` is not generated. These operations are lightweight and do not involve additional overhead associated with being `async`.
 
 In the first scenario, unavoidable overhead arises from the use of `AsyncStream` to capture the results of the `taskGroup` and the `taskGroup` itself. Therefore, it is advisable to minimize the number of `map`-like operations queued.
@@ -75,7 +75,7 @@ A stream is always ordered, given the negligible performance difference between 
 
 ## Throwing
 
-The closure should only throw when one needs to cancel the pending operations and throw the error, which will be captured in
+In ``map(_:)-4q8b6``-like closure, it should only throw when one needs to cancel the pending operations and throw the error, which will be captured in
 
 ```swift
 while let next = try await stream.next
@@ -86,13 +86,13 @@ Otherwise, returns a `nil` would be a better choice, allowing the stream to keep
 
 ### rethrows implementation
 
-A new implementation addressing will come out with Swift6.0.
+With typed throws, ``ConcurrentStream`` now only throws when it is required to.
 
-> Bug:
-> You may encounter cases where `try` is required when it would never throw.
+> Example:
+> The following will no longer throw in the latest implementations.
 > 
 > ```swift
-> try await (1...1000)
+> await (1...1000)
 >     .stream
 >     .map { $0 % 2 }
 >     .sequence
@@ -128,19 +128,19 @@ These operations are lightweight and do not involve additional overhead associat
 
 - ``compacted()``
 - ``unique()``
-- ``flatten()-7xbsj``
-- ``+(_:_:)``
+- ``flatten()-3mp1s``
+- ``+(_:_:)-7m6k2``
 
 
 ### Mappings
 These operations involve creation of `taskGroup` in each function call.
 
-- ``map(_:)``
-- ``compactMap(_:)``
-- ``flatMap(_:)-8e3lh``
+- ``map(_:)-4q8b6``
+- ``compactMap(_:)-8yxjm``
+- ``flatMap(_:)-6o6er``
 
 
 ### Excluding Elements
 Note that there is no way to retrieve the excluded elements. These operation themselves are lightweight.
 
-- ``filter(_:)``
+- ``filter(_:)-5v6w8``

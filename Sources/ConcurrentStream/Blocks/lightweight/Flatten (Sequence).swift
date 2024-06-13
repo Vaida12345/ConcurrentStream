@@ -52,7 +52,7 @@ fileprivate final class ConcurrentSequenceFlattenStream<SourceStream>: Concurren
 
 extension ConcurrentStream {
     
-    /// Returns a compact mapped stream.
+    /// Returns a flat mapped stream.
     ///
     /// The overhead of this method is kept minimum. It would perform the same as `Sequence.flatten()`.
     ///
