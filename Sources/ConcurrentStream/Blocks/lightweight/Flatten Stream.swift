@@ -15,11 +15,11 @@ fileprivate final class ConcurrentFlattenStream<SourceStream>: ConcurrentStream 
     /// The current iterating child of `source`.
     private var stream: SourceStream.Element? = nil
     
-    fileprivate init(source: SourceStream) {
+    fileprivate init(source: consuming SourceStream) {
         self.source = source
     }
     
-    func next() async throws -> Element? {
+    func next() async throws(Failure) -> Element? {
         do {
             if let next = try await stream?.next() {
                 return next
@@ -39,11 +39,13 @@ fileprivate final class ConcurrentFlattenStream<SourceStream>: ConcurrentStream 
         }
     }
     
-    func cancel() {
+    consuming func cancel() {
         self.source.cancel()
     }
     
     typealias Element = SourceStream.Element.Element
+    
+    typealias Failure = any Error
     
 }
 
@@ -55,8 +57,10 @@ extension ConcurrentStream {
     /// The overhead of this method is kept minimum. It would perform the same as `Sequence.flatten()`.
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
-    public consuming func flatten<T>() -> some ConcurrentStream<T> where Element: ConcurrentStream<T> {
-        ConcurrentFlattenStream(source: self)
+    ///
+    /// - Throws: Sadly, there is no way to obtain the thrown error, even with typed throws.
+    public consuming func flatten<T>() -> some ConcurrentStream<T, any Error> where Element: ConcurrentStream<T, any Error> {
+        ConcurrentFlattenStream(source: consume self)
     }
     
 }

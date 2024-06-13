@@ -11,7 +11,7 @@ private final class ConcurrentSequenceStream<Source>: ConcurrentStream where Sou
     
     private var iterator: Source.Iterator
     
-    fileprivate init(source: Source) {
+    fileprivate init(source: consuming Source) {
         self.iterator = source.makeIterator()
     }
     
@@ -24,6 +24,8 @@ private final class ConcurrentSequenceStream<Source>: ConcurrentStream where Sou
     }
     
     fileprivate typealias Element = Source.Element
+    
+    typealias Failure = Never
     
 }
 
@@ -47,8 +49,10 @@ extension Sequence {
     /// ### See Also
     /// - ``_Concurrency/AsyncSequence/stream``
     /// - ``Foundation/NSEnumerator/stream(of:)``
-    public var stream: some ConcurrentStream<Element> {
-        ConcurrentSequenceStream(source: self)
+    public var stream: some ConcurrentStream<Element, Never> {
+        consuming get {
+            ConcurrentSequenceStream(source: consume self)
+        }
     }
     
 }

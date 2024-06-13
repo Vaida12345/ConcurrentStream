@@ -9,14 +9,14 @@
 
 // Documentation in DocC.
 @rethrows
-public protocol ConcurrentStream<Element>: AsyncIteratorProtocol, AnyObject {
+public protocol ConcurrentStream<Element, Failure>: AnyObject { // FIXME: ~Copyable not yet implemented.
     
     /// Returns the next element in the iterator.
     ///
     /// The elements will always be returned in the order they were submitted.
     ///
     /// - Returns: The next element in the iterator, `nil` when reached the end.
-    func next() async throws -> Element?
+    func next() async throws(Failure) -> Self.Element?
     
     /// Cancels the stream, and its upstreams.
     ///
@@ -40,9 +40,12 @@ public protocol ConcurrentStream<Element>: AsyncIteratorProtocol, AnyObject {
     /// >     iterator.cancel()
     /// > }
     /// > ```
-    func cancel()
+    consuming func cancel()
     
     /// The type of element produced by this stream.
     associatedtype Element
+    
+    /// The type of error produced by this stream.
+    associatedtype Failure: Error
     
 }

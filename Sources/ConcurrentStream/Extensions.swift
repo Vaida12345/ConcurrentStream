@@ -16,20 +16,25 @@ extension ConcurrentStream {
     /// - Complexity: O(*n*).
     @inlinable
     public var sequence: Array<Element> {
-        consuming get async throws {
+        consuming get async throws(Failure) {
             let stream = consume self
-            return try await withTaskCancellationHandler {
-                var array: [Element] = []
-                
-                while let next = try await stream.next() {
-                    array.append(next)
+            
+            do {
+                return try await withTaskCancellationHandler {
+                    var array: [Element] = []
+                    
+                    while let next = try await stream.next() {
+                        array.append(next)
+                    }
+                    
+                    return array
+                } onCancel: {
+                    stream.cancel()
                 }
-                
-                return array
-            } onCancel: {
+            } catch {
                 stream.cancel()
+                throw error as! Failure
             }
-
         }
     }
     

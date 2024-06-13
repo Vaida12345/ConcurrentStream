@@ -1,58 +1,83 @@
-import XCTest
-@testable import ConcurrentStream
-import CryptoKit
 
-final class ConcurrentStreamTests: XCTestCase {
+import Foundation
+@testable import ConcurrentStream
+
+#if canImport(Testing)
+import Testing
+
+private extension Tag {
     
+    @Tag static var conversion: Self
+    
+    @Tag static var mapping: Self
+    
+    @Tag static var lightweightOperations: Self
+    
+    @Tag static var operations: Self
+    
+}
+
+@Suite("Concurrent Stream")
+struct ConcurrentStreamTests {
+    
+    @Test("Sequence", .tags(.conversion))
     func testSequence() async throws {
         let sequence = [Int](0...100).shuffled()
-        let stream = try await sequence.stream.sequence
-        XCTAssertEqual(sequence, stream)
+        let stream = await sequence.stream.sequence
+        #expect(sequence == stream)
     }
     
+    @Test("AsyncSequence", .tags(.conversion, .mapping))
+    @available(macOS 15, *)
     func testsResultingAsyncSequence() async throws {
         let sequence = [Int](0...100).shuffled()
         let async = try await Task {
             await sequence.stream.map({ $0 }).async
         }.value.allObjects
-        XCTAssertEqual(sequence, async)
+        #expect(sequence == async)
     }
     
+    @Test("AsyncSequence", .tags(.conversion))
+    @available(macOS 15, *)
     func testsAsyncSequence() async throws {
         let sequence = [Int](0...100).shuffled()
-        let async = try await sequence.stream.async.stream.sequence
-        XCTAssertEqual(sequence, async)
+        let async = await sequence.stream.async.stream.sequence
+        #expect(sequence == async)
     }
     
+    @Test("CompactMap", .tags(.mapping))
     func testCompactMap() async throws {
         let sequence = [Int](0...100).shuffled()
-        let compactMap = try await sequence.stream.compactMap({ $0 % 2 == 0 ? nil : $0 }).sequence
-        let mapCompact = try await sequence.stream.map({ $0 % 2 == 0 ? nil : $0 }).compacted().sequence
+        let compactMap = await sequence.stream.compactMap({ $0 % 2 == 0 ? nil : $0 }).sequence
+        let mapCompact = await sequence.stream.map({ $0 % 2 == 0 ? nil : $0 }).compacted().sequence
         let compactSequence = sequence.compactMap({ $0 % 2 == 0 ? nil : $0  })
         
-        XCTAssertEqual(compactMap, mapCompact)
-        XCTAssertEqual(compactMap, compactSequence)
+        #expect(compactMap == mapCompact)
+        #expect(compactMap == compactSequence)
     }
     
+    @Test("Unique", .tags(.lightweightOperations))
     func testsUniqueSequence() async throws {
         let sequence = [Int](0...100).shuffled()
-        let async = try await sequence.stream.unique().sequence
-        XCTAssertEqual(Set(sequence), Set(async))
+        let async = await sequence.stream.unique().sequence
+        #expect(Set(sequence) == Set(async))
         
         let sequenceWithRepeat = [Int](0...100).shuffled() + [Int](0...100).shuffled()
-        let asyncWithRepeat = try await sequenceWithRepeat.stream.unique().sequence
-        XCTAssertEqual(Set(sequenceWithRepeat), Set(asyncWithRepeat))
+        let asyncWithRepeat = await sequenceWithRepeat.stream.unique().sequence
+        #expect(Set(sequenceWithRepeat) == Set(asyncWithRepeat))
     }
     
+    @Test("FlatMap", .tags(.mapping))
     func testFlatMap() async throws {
         let sequence = [Int](0...100).shuffled()
         let stream = try await sequence.stream.flatMap({ (0...$0).stream }).sequence
-        XCTAssertEqual(sequence.flatMap({ (0...$0) }), stream)
+        #expect(sequence.flatMap({ (0...$0) }) == stream)
         
         let stream2 = try await sequence.stream.flatMap({ (0...$0) }).sequence
-        XCTAssertEqual(sequence.flatMap({ (0...$0) }), stream2)
+        #expect(sequence.flatMap({ (0...$0) }) == stream2)
     }
     
+    @Test("ForEach", .tags(.operations))
     func testForEach() async throws {
         let sequence = [Int](0...100).shuffled()
         let buffer = UnsafeMutablePointer<Int>.allocate(capacity: sequence.count)
@@ -60,36 +85,40 @@ final class ConcurrentStreamTests: XCTestCase {
             (buffer + index).initialize(to: element)
         }
         
-        XCTAssertEqual(sequence, Array(UnsafeMutableBufferPointer(start: buffer, count: sequence.count)))
+        #expect(sequence == Array(UnsafeMutableBufferPointer(start: buffer, count: sequence.count)))
     }
     
+    @Test("Stream Addition")
     func testSerialized() async throws {
         let sequence1 = [Int](0...100).shuffled()
         let sequence2 = [Int](0...100).shuffled()
         
         let stream = sequence1.stream + sequence2.stream
         let sequenceFromStream = try await stream.sequence
-        XCTAssertEqual(sequence1 + sequence2, sequenceFromStream)
+        #expect(sequence1 + sequence2 == sequenceFromStream)
     }
     
+    @Test("Compact", .tags(.lightweightOperations))
     func testCompact() async throws {
         let sequence = ([Int](1...100) + [Int?](repeating: nil, count: 100)).shuffled()
         
-        let stream = try await sequence.stream.map({ $0 }).compacted().sequence
-        XCTAssertEqual(sequence.compactMap({ $0 }), stream)
+        let stream = await sequence.stream.map({ $0 }).compacted().sequence
+        #expect(sequence.compactMap({ $0 }) == stream)
     }
     
+    @Test("Filter", .tags(.lightweightOperations))
     func testFilters() async throws {
         let sequence = [Int](0...100).shuffled().filter({ $0.isMultiple(of: 2) })
         let stream = try await sequence.stream.filter({ $0.isMultiple(of: 2) }).sequence
-        XCTAssertEqual(sequence, stream)
+        #expect(sequence == stream)
     }
     
+    @Test("NSEnumerator", .tags(.conversion))
     func testNSEnumerator() async throws {
         let sequence = [Int](0...100).shuffled()
         let enumerator = NSArray(array: sequence).objectEnumerator()
-        let stream = try await NSArray(array: sequence).objectEnumerator().stream(of: Int.self).sequence
-        XCTAssertEqual((enumerator.allObjects as! [Int]), stream)
+        let stream = await NSArray(array: sequence).objectEnumerator().stream(of: Int.self).sequence
+        #expect((enumerator.allObjects as! [Int]) == stream)
     }
     
 }
@@ -109,3 +138,8 @@ private extension AsyncSequence {
     }
     
 }
+
+enum TestError: Error {
+    case example
+}
+#endif

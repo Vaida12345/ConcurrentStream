@@ -117,6 +117,8 @@ extension ConcurrentStream {
     ///
     /// - Complexity: The process entails creating a new `taskGroup`.
     ///
+    /// - Throws: Sadly, there is no way to obtain the thrown error, even with typed throws.
+    ///
     /// > Experiment:
     /// > There exists a ~3.6੫s overhead for each element. (Compared to ~500ps for each element of a sequence.)
     /// >
@@ -131,8 +133,8 @@ extension ConcurrentStream {
     /// > - Use of `Dictionary` as buffer: ~50ns
     /// >
     /// > *Please also note that this benchmark could be inaccuracy due to the nature of concurrency.*
-    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> T) async -> some ConcurrentStream<T> {
-        await ConcurrentMapStream(source: consume self, work: transform)
+    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> T) async -> some ConcurrentStream<T, any Error> {
+        await ConcurrentMapStream(source: self, work: transform) // self cannot be consumed
     }
     
 }

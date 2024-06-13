@@ -14,12 +14,12 @@ fileprivate final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream w
     
     private var set: Set<Int>
     
-    fileprivate init(source: SourceStream) {
+    fileprivate init(source: consuming SourceStream) {
         self.source = source
         self.set = []
     }
     
-    func next() async throws -> Element? {
+    func next() async throws(Failure) -> Element? {
         do {
             guard let next = try await source.next() else { return nil }
             let hash = next.hashValue
@@ -30,15 +30,17 @@ fileprivate final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream w
             return try await self.next()
         } catch {
             self.cancel()
-            throw error
+            throw error as! Failure
         }
     }
     
-    func cancel() {
+    consuming func cancel() {
         self.source.cancel()
     }
     
     typealias Element = SourceStream.Element
+    
+    typealias Failure = SourceStream.Failure
     
 }
 
@@ -58,8 +60,8 @@ extension ConcurrentStream {
     /// - Returns: The array without repeated elements.
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
-    public consuming func unique() -> some ConcurrentStream<Element> where Element: Hashable {
-        ConcurrentUniqueStream(source: self)
+    public consuming func unique() -> some ConcurrentStream<Element, Failure> where Element: Hashable {
+        ConcurrentUniqueStream(source: consume self)
     }
     
 }

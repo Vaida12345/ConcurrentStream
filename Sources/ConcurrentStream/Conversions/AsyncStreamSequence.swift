@@ -10,6 +10,7 @@
 /// An `AsyncSequence` bridged from ``ConcurrentStream``.
 ///
 /// You can use ``cancel()`` to cancel the underlying `stream`. For more information, see ``cancel()``.
+@available(macOS 15, *)
 public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence where SourceStream: ConcurrentStream {
     
     private let source: SourceStream
@@ -21,7 +22,7 @@ public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence wh
         AsyncIterator(source: source)
     }
     
-    fileprivate init(source: SourceStream) {
+    fileprivate init(source: consuming SourceStream) {
         self.source = source
     }
     
@@ -41,13 +42,19 @@ public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence wh
         
         private let source: SourceStream
         
-        fileprivate init(source: SourceStream) {
+        fileprivate init(source: consuming SourceStream) {
             self.source = source
         }
         
-        public func next() async throws -> Element? {
-            try await source.next()
+        public func next() async throws(SourceStream.Failure) -> Element? {
+            do {
+                return try await source.next()
+            } catch {
+                throw error as! SourceStream.Failure
+            }
         }
+        
+        public typealias Failure = SourceStream.Failure
         
     }
     
@@ -76,9 +83,10 @@ extension ConcurrentStream {
     /// ## Topics
     /// ### The Structure
     /// - ``AsyncConcurrentStreamSequence``
+    @available(macOS 15, *)
     public var async: AsyncConcurrentStreamSequence<Self> {
         consuming get {
-            AsyncConcurrentStreamSequence(source: self)
+            AsyncConcurrentStreamSequence(source: consume self)
         }
     }
     

@@ -24,9 +24,11 @@ private final class ConcurrentNSEnumeratorStream<Element>: ConcurrentStream {
     }
     
     
-    fileprivate init(iterator: NSEnumerator) {
+    fileprivate init(iterator: consuming NSEnumerator) {
         self.iterator = iterator
     }
+    
+    typealias Failure = Never
     
 }
 
@@ -38,7 +40,7 @@ extension NSEnumerator {
     /// - Important: This function would consume and deplete the enumerator.
     ///
     /// - Complexity: O(*1*).
-    public consuming func stream<Element>(of type: Element.Type) -> some ConcurrentStream<Element> {
+    public consuming func stream<Element>(of type: Element.Type) -> some ConcurrentStream<Element, Never> {
         ConcurrentNSEnumeratorStream(iterator: self)
     }
     

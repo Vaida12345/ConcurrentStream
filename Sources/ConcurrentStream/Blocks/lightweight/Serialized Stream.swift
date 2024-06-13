@@ -9,12 +9,12 @@
 
 private final class ConcurrentSerializedStream<LHS, RHS>: ConcurrentStream where LHS: ConcurrentStream, RHS: ConcurrentStream, LHS.Element == RHS.Element {
     
-    private var lhs: LHS
+    private let lhs: LHS
     
-    private var rhs: RHS
+    private let rhs: RHS
     
     
-    fileprivate func next() async throws -> Element? {
+    func next() async throws(Failure) -> Element? {
         do {
             if let lhs = try await lhs.next() { return lhs }
             return try await rhs.next()
@@ -24,18 +24,20 @@ private final class ConcurrentSerializedStream<LHS, RHS>: ConcurrentStream where
         }
     }
     
-    fileprivate func cancel() {
+    consuming func cancel() {
         lhs.cancel()
         rhs.cancel()
     }
     
     
-    fileprivate init(lhs: LHS, rhs: RHS) {
+    fileprivate init(lhs: consuming LHS, rhs: consuming RHS) {
         self.lhs = lhs
         self.rhs = rhs
     }
     
     typealias Element = LHS.Element
+    
+    typealias Failure = any Error
     
 }
 
@@ -51,8 +53,10 @@ extension ConcurrentStream {
     ///   - rhs: Another stream to be iterated at the end of current stream.
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
-    public static func + (_ lhs: Self, _ rhs: some ConcurrentStream<Element>) -> some ConcurrentStream<Element> {
-        ConcurrentSerializedStream(lhs: lhs, rhs: rhs)
+    ///
+    /// - Throws: Sadly, there is no way to obtain the thrown error, even with typed throws.
+    public static func + (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, some Error>) -> some ConcurrentStream<Element, any Error> {
+        ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
     }
 
 }

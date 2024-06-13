@@ -7,16 +7,17 @@
 //
 
 
+@available(macOS 15, *)
 private final class ConcurrentAsyncSequenceStream<Source>: ConcurrentStream where Source: AsyncSequence {
     
     private var iterator: Source.AsyncIterator
     
-    fileprivate init(source: Source) {
+    fileprivate init(source: consuming Source) {
         self.iterator = source.makeAsyncIterator()
     }
     
-    fileprivate func next() async throws -> Element? {
-        try await iterator.next()
+    fileprivate func next() async throws(Failure) -> Element? {
+        try await iterator.next(isolation: nil)
     }
     
     fileprivate func cancel() {
@@ -24,6 +25,8 @@ private final class ConcurrentAsyncSequenceStream<Source>: ConcurrentStream wher
     }
     
     fileprivate typealias Element = Source.Element
+    
+    typealias Failure = Source.AsyncIterator.Failure
     
 }
 
@@ -42,8 +45,11 @@ extension AsyncSequence {
     /// - Returns: The iterator for the sequence is created before returning.
     ///
     /// - Complexity: O(*1*).
-    public var stream: some ConcurrentStream<Element> {
-        ConcurrentAsyncSequenceStream(source: self)
+    @available(macOS 15, *)
+    public var stream: some ConcurrentStream<Element, Failure> {
+        consuming get {
+            ConcurrentAsyncSequenceStream(source: consume self)
+        }
     }
     
 }

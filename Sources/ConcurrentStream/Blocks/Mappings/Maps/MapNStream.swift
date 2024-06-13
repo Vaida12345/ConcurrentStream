@@ -1,5 +1,5 @@
 //
-//  ConcurrentCompactMapStream.swift
+//  ConcurrentMapNeverThrowStream.swift
 //  The Concurrent Stream Module
 //
 //  Created by Vaida on 6/1/23.
@@ -7,7 +7,7 @@
 //
 
 
-private final class ConcurrentCompactMapStream<Element, SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream {
+private final class ConcurrentMapNeverThrowStream<Element, SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Failure == Never {
     
     /// The source stream
     private let source: SourceStream
@@ -17,17 +17,17 @@ private final class ConcurrentCompactMapStream<Element, SourceStream>: Concurren
     private var base: AsyncThrowingStream<Word, any Error>.Iterator?
     
     /// The buffer for retaining pending values.
-    private var _buffer: Dictionary<Int, Element?> = [:]
+    private var _buffer: Dictionary<Int, Element> = [:]
     
     /// The index for the next element to produce in `next()`
     private var index = 0
     
     /// The task containing the `TaskGroup`
-    private var task: Task<Void, any Error>?
+    private var task: Task<Void, Never>?
     
     
     
-    fileprivate init(source: SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async throws -> Optional<Element>) async {
+    fileprivate init(source: SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async -> Element) async {
         self.source = source
         let (_stream, continuation) = AsyncThrowingStream.makeStream(of: Word.self)
         self.base = _stream.makeAsyncIterator()
@@ -36,7 +36,7 @@ private final class ConcurrentCompactMapStream<Element, SourceStream>: Concurren
             do {
                 try await withThrowingTaskGroup(of: Void.self) { group in
                     var count = 0
-                    while let value = try await source.next() {
+                    while let value = await source.next() {
                         let _count = count
                         
                         await Task.yield()
@@ -50,7 +50,7 @@ private final class ConcurrentCompactMapStream<Element, SourceStream>: Concurren
                             await Task.yield()
                             try Task.checkCancellation()
                             
-                            let next = try await (_count, work(value))
+                            let next = await (_count, work(value))
 //                            print("finished \(_count)")
                             continuation.yield(next)
                         }
@@ -72,7 +72,7 @@ private final class ConcurrentCompactMapStream<Element, SourceStream>: Concurren
     }
     
     /// Access the next element in the stream. `wait`ing is built-in.
-    public func next() async throws -> Element? {
+    public func next() async -> Element? {
         do {
             let index = index
             while _buffer[index] == nil {
@@ -88,14 +88,10 @@ private final class ConcurrentCompactMapStream<Element, SourceStream>: Concurren
             let value = _buffer.removeValue(forKey: index)!
             self.index += 1
             
-            if let value {
-                return value
-            } else {
-                return try await self.next()
-            }
+            return value
         } catch {
             self.cancel()
-            throw error
+            return nil // only time to throw is when the task is cancelled.
         }
     }
     
@@ -105,14 +101,14 @@ private final class ConcurrentCompactMapStream<Element, SourceStream>: Concurren
     }
     
     /// The Internal stored word
-    private typealias Word = (Int, Optional<Element>)
+    private typealias Word = (Int, Element)
     
 }
 
 
 extension ConcurrentStream {
     
-    /// Creates a concurrent stream that compact maps the given closure over the stream’s elements.
+    /// Creates a concurrent stream that maps the given closure over the stream’s elements.
     ///
     /// The `taskGroup` is created and dispatched; this function returns immediately.
     ///
@@ -121,15 +117,24 @@ extension ConcurrentStream {
     ///
     /// - Complexity: The process entails creating a new `taskGroup`.
     ///
-    /// - Tip: `map(_:).compacted()` would perform the same as `compactMap(_:)`, with similar performance.
+    /// - Throws: Sadly, there is no way to obtain the thrown error, even with typed throws.
     ///
-    /// ## Topics
-    /// ### Lightweight Equivalent
-    /// The lightweight equivalent performs much better when transformation is not required.
-    ///
-    /// - ``compacted()``
-    public consuming func compactMap<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> Optional<T>) async -> some ConcurrentStream<T> {
-        await ConcurrentCompactMapStream(source: consume self, work: transform)
+    /// > Experiment:
+    /// > There exists a ~3.6੫s overhead for each element. (Compared to ~500ps for each element of a sequence.)
+    /// >
+    /// > **The breakdown could be:**
+    /// >
+    /// > - Bridge from sequence to stream: ~320ns
+    /// >
+    /// > - Use of `AsyncStream`: ~1.6੫s
+    /// >
+    /// > - Use of `TaskGroup`: ~1.1੫s
+    /// >
+    /// > - Use of `Dictionary` as buffer: ~50ns
+    /// >
+    /// > *Please also note that this benchmark could be inaccuracy due to the nature of concurrency.*
+    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> T) async -> some ConcurrentStream<T, Never> where Failure == Never {
+        await ConcurrentMapNeverThrowStream(source: self, work: transform) // self cannot be consumed
     }
     
 }

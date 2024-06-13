@@ -1,5 +1,5 @@
 //
-//  ConcurrentSequenceFlattenStream.swift
+//  ConcurrentFlattenNonThrowingStream.swift
 //  The Concurrent Stream Module
 //
 //  Created by Vaida on 2024/3/31.
@@ -7,13 +7,13 @@
 //
 
 
-fileprivate final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Sequence {
+fileprivate final class ConcurrentFlattenNonThrowingStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: ConcurrentStream, SourceStream.Element.Failure == Never {
     
     /// The source stream
     private let source: SourceStream
     
     /// The current iterating child of `source`.
-    private var stream: SourceStream.Element.Iterator? = nil
+    private var stream: SourceStream.Element? = nil
     
     fileprivate init(source: consuming SourceStream) {
         self.source = source
@@ -21,7 +21,7 @@ fileprivate final class ConcurrentSequenceFlattenStream<SourceStream>: Concurren
     
     func next() async throws(Failure) -> Element? {
         do {
-            if let next = stream?.next() {
+            if let next = await stream?.next() {
                 return next
             }
             
@@ -31,7 +31,7 @@ fileprivate final class ConcurrentSequenceFlattenStream<SourceStream>: Concurren
                 return nil
             }
             
-            self.stream = nextStream.makeIterator()
+            self.stream = nextStream
             return try await self.next()
         } catch {
             self.cancel()
@@ -57,8 +57,8 @@ extension ConcurrentStream {
     /// The overhead of this method is kept minimum. It would perform the same as `Sequence.flatten()`.
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
-    public consuming func flatten<T>() -> some ConcurrentStream<T, Failure> where Element: Sequence<T> {
-        ConcurrentSequenceFlattenStream(source: consume self)
+    public consuming func flatten<T>() -> some ConcurrentStream<T, Failure> where Element: ConcurrentStream<T, Never> {
+        ConcurrentFlattenNonThrowingStream(source: consume self)
     }
     
 }

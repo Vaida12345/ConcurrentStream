@@ -12,11 +12,11 @@ fileprivate final class ConcurrentCompactedStream<Unwrapped, SourceStream>: Conc
     /// The source stream
     private let source: SourceStream
     
-    fileprivate init(source: SourceStream) {
+    fileprivate init(source: consuming SourceStream) {
         self.source = source
     }
     
-    func next() async throws -> Element? {
+    func next() async throws(Failure) -> Element? {
         do {
             guard let next = try await source.next() else { return nil } // reaches end
             if let next {
@@ -27,15 +27,17 @@ fileprivate final class ConcurrentCompactedStream<Unwrapped, SourceStream>: Conc
             }
         } catch {
             self.cancel()
-            throw error
+            throw error as! Failure //FIXME: why force case?
         }
     }
     
-    func cancel() {
+    consuming func cancel() {
         self.source.cancel()
     }
     
     typealias Element = Unwrapped
+    
+    typealias Failure = SourceStream.Failure
     
 }
 
@@ -49,8 +51,8 @@ extension ConcurrentStream {
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
     ///
     /// - Tip: `map(_:).compacted()` would perform the same as `compactMap(_:)`, with similar performance.
-    public consuming func compacted<Unwrapped>() -> some ConcurrentStream<Unwrapped> where Element == Unwrapped? {
-        ConcurrentCompactedStream(source: self)
+    public consuming func compacted<Unwrapped>() -> some ConcurrentStream<Unwrapped, Failure> where Element == Unwrapped? {
+        ConcurrentCompactedStream(source: consume self)
     }
     
 }

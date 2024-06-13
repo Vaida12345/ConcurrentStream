@@ -57,7 +57,7 @@ In the first scenario, unavoidable overhead arises from the use of `AsyncStream`
 
 This protocol is a class protocol, due to the fact that
 - A class protocol has a `deinit` block, where the task can be cancelled.
-- A class protocol has non-mutating next, making the following way of cancelation possible:
+- A class protocol has non-next, making the following way of cancelation possible:
 ```swift
 let stream = some ConcurrentStream
 

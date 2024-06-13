@@ -16,12 +16,12 @@ fileprivate final class ConcurrentFilterStream<SourceStream>: ConcurrentStream w
     
     private let isIncluded: (Element) async throws -> Bool
     
-    fileprivate init(source: SourceStream, isIncluded: @escaping (Element) async throws -> Bool) {
+    fileprivate init(source: consuming SourceStream, isIncluded: @escaping (Element) async throws -> Bool) {
         self.source = source
         self.isIncluded = isIncluded
     }
     
-    func next() async throws -> Element? {
+    func next() async throws(Failure) -> Element? {
         do {
             guard let next = try await source.next() else { return nil }
             if try await isIncluded(next) {
@@ -35,11 +35,13 @@ fileprivate final class ConcurrentFilterStream<SourceStream>: ConcurrentStream w
         }
     }
     
-    func cancel() {
+    consuming func cancel() {
         self.source.cancel()
     }
     
     typealias Element = SourceStream.Element
+    
+    typealias Failure = any Error
     
 }
 
@@ -61,8 +63,10 @@ extension ConcurrentStream {
     /// - Important: There is **no way** to retrieve the discarded elements. A stream is not copyable. (Although in this implementation, it is copy-by-reference.)
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
-    public consuming func filter(_ isIncluded: @escaping (Element) async throws -> Bool) -> some ConcurrentStream<Element> {
-        ConcurrentFilterStream(source: self, isIncluded: isIncluded)
+    ///
+    /// - Throws: Sadly, there is no way to obtain the thrown error, even with typed throws.
+    public consuming func filter(_ isIncluded: @escaping (Element) async throws -> Bool) -> some ConcurrentStream<Element, any Error> {
+        ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
     }
     
 }
