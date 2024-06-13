@@ -60,7 +60,7 @@ extension ConcurrentStream {
     ///   - index: The index of the element.
     ///   - element: The contained value of the element.
     @inlinable
-    public func forEach(_ body: @escaping @Sendable (_ index: Int, _ element: Element) async throws -> Void) async throws {
+    public func forEach(_ body: @escaping (_ index: Int, _ element: Element) async throws -> Void) async throws {
         if #available(macOS 14, iOS 17, watchOS 10, tvOS 17, *) {
             try await withThrowingDiscardingTaskGroup { group in
                 var index = 0

@@ -55,11 +55,12 @@ final class ConcurrentStreamTests: XCTestCase {
     
     func testForEach() async throws {
         let sequence = [Int](0...100).shuffled()
-        let buffer = UnsafeMutableBufferPointer<Int>.allocate(capacity: sequence.count)
+        let buffer = UnsafeMutablePointer<Int>.allocate(capacity: sequence.count)
         try await sequence.stream.forEach { index, element in
-            buffer[index] = element
+            (buffer + index).initialize(to: element)
         }
-        XCTAssertEqual(sequence, Array(buffer))
+        
+        XCTAssertEqual(sequence, Array(UnsafeMutableBufferPointer(start: buffer, count: sequence.count)))
     }
     
     func testSerialized() async throws {
@@ -90,69 +91,6 @@ final class ConcurrentStreamTests: XCTestCase {
         let stream = try await NSArray(array: sequence).objectEnumerator().stream(of: Int.self).sequence
         XCTAssertEqual((enumerator.allObjects as! [Int]), stream)
     }
-    
-//    func testCancel() async throws {
-//        
-//        
-//        let task = Task {
-//            do {
-//                let date = Date()
-//                let stream = await [Int](1...1000).stream.map(heavyWork).map({ $0 }).async.map({ $0 })
-//                print(date.distance(to: Date()))
-//                
-//                            for _ in 0...1000 {
-//                                //                await Task.yield()
-//                                heavyWork(i: 0)
-//                            }
-//                
-//                for try await element in stream {
-//                    print(">>", element)
-//                }
-//            } catch {
-//                print(error)
-//            }
-//        }
-////        try await task.value
-//        try await Task.sleep(for: .seconds(0.001))
-//        print("will ask to cancel")
-//        task.cancel()
-//        try await Task.sleep(for: .seconds(10))
-//    }
-    
-//    func testPerformance() async throws {
-//        let stream = { index in
-//            try await (0...index).stream.forEach { index, element in
-//                
-//            }
-//        }
-//        
-//        let taskGroup = { index  in
-//            await withTaskGroup(of: Int.self) { taskGroup in
-//                for i in 0...index {
-//                    taskGroup.addTask {
-//                        i
-//                    }
-//                }
-//            }
-//        }
-//        
-//        var streamResults: [Duration] = []
-//        var taskGroupResults: [Duration] = []
-//        streamResults.reserveCapacity(1000)
-//        taskGroupResults.reserveCapacity(1000)
-//        
-//        for i in 0..<1000 {
-//            try await streamResults.append(ContinuousClock().measure {
-//                try await stream(i)
-//            })
-//            await taskGroupResults.append(ContinuousClock().measure {
-//                await taskGroup(i)
-//            })
-//        }
-//        
-//        print(streamResults.reduce(Duration(secondsComponent: 0, attosecondsComponent: 0), +) / 1000)
-//        print(taskGroupResults.reduce(Duration(secondsComponent: 0, attosecondsComponent: 0), +) / 1000)
-//    }
     
 }
 
