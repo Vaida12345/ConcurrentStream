@@ -30,7 +30,7 @@ fileprivate final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream w
             return try await self.next()
         } catch {
             self.cancel()
-            throw error as! Failure
+            throw error
         }
     }
     

@@ -27,7 +27,7 @@ fileprivate final class ConcurrentCompactedStream<Unwrapped, SourceStream>: Conc
             }
         } catch {
             self.cancel()
-            throw error as! Failure //FIXME: why force case?
+            throw error
         }
     }
     

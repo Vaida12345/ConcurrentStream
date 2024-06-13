@@ -87,6 +87,7 @@ extension ConcurrentStream {
 extension ConcurrentStream where Failure == Never {
     
     // MARK: (SourceStream.Failure: Never, isIncluded: some Error)
+    // FIXME: Currently not called, swift choose to use the first one instead.
     /// Returns an stream containing, in order, the elements of the stream that satisfy the given predicate.
     ///
     /// This is a variant of ``ConcurrentStream/filter(_:)-5v6w8``

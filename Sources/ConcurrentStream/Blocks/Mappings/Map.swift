@@ -8,7 +8,7 @@
 
 
 /// The primary associative values are: The returned element, The source stream, the error that this stream throws, the error that the work closure throws.
-fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure>: ConcurrentStream where SourceStream: ConcurrentStream, TransformFailure: Error, Failure: Error {
+fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure>: ConcurrentStream, @unchecked Sendable where SourceStream: ConcurrentStream, TransformFailure: Error, Failure: Error {
     
     /// The source stream
     private let source: SourceStream
@@ -29,6 +29,8 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
     
     
     init(source: SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async throws(TransformFailure) -> Element) async {
+        nonisolated(unsafe)
+        let source = consume source
         self.source = source
         let (_stream, continuation) = AsyncThrowingStream.makeStream(of: Word.self)
         self.base = _stream.makeAsyncIterator()
@@ -39,6 +41,8 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
                     var count = 0
                     while let value = try await source.next() {
                         let _count = count
+                        nonisolated(unsafe)
+                        let value = value
                         
                         await Task.yield()
                         guard !Task.isCancelled else {
@@ -90,6 +94,9 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
             self.index += 1
             
             return value
+        } catch is CancellationError {
+            self.cancel()
+            return nil
         } catch {
             self.cancel()
             throw error as! Failure
@@ -118,6 +125,8 @@ extension ConcurrentStream {
     ///   - transform: A mapping closure. `transform` accepts an element of this sequence as its parameter and returns a transformed value of the same or of a different type.
     ///
     /// - Complexity: The process entails creating a new `taskGroup`.
+    ///
+    /// - Returns: The resulting stream also returns `nil` when the task is cancelled. (Instead of throwing `CancelationError`.)
     ///
     /// > Experiment:
     /// > There exists a ~3.6੫s overhead for each element. (Compared to ~500ps for each element of a sequence.)

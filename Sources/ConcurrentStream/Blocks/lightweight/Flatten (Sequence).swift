@@ -35,7 +35,7 @@ fileprivate final class ConcurrentSequenceFlattenStream<SourceStream>: Concurren
             return try await self.next()
         } catch {
             self.cancel()
-            throw error as! Failure
+            throw error
         }
     }
     

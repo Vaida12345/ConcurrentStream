@@ -8,7 +8,6 @@
 
 
 // Documentation in DocC.
-@rethrows
 public protocol ConcurrentStream<Element, Failure>: AnyObject { // FIXME: ~Copyable not yet implemented.
     
     /// Returns the next element in the iterator.
@@ -40,7 +39,7 @@ public protocol ConcurrentStream<Element, Failure>: AnyObject { // FIXME: ~Copya
     /// >     iterator.cancel()
     /// > }
     /// > ```
-    consuming func cancel()
+    consuming nonisolated func cancel()
     
     /// The type of element produced by this stream.
     associatedtype Element

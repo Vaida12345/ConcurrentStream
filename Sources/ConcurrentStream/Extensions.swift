@@ -17,6 +17,7 @@ extension ConcurrentStream {
     @inlinable
     public var sequence: Array<Element> {
         consuming get async throws(Failure) {
+            nonisolated(unsafe) // FIXME: isolated?
             let stream = consume self
             
             do {
@@ -42,7 +43,7 @@ extension ConcurrentStream {
     ///
     /// ### Closure parameters
     /// `index`
-    /// 
+    ///
     /// The index of the element.
     ///
     /// `element`
@@ -73,16 +74,20 @@ extension ConcurrentStream {
     ///
     /// - Parameters:
     ///   - body: A closure that takes an element of the sequence as a parameter.
+    ///
+    /// - throws: This function could throw ``Failure``, `E`, or `CancelationError`.
     @inlinable
-    public func forEach(_ body: @escaping (_ index: Int, _ element: Element) async throws -> Void) async throws {
+    public func forEach<E>(_ body: @escaping @Sendable (_ index: Int, _ element: Element) async throws(E) -> Void) async throws(any Error) where E: Error {
         if #available(macOS 14, iOS 17, watchOS 10, tvOS 17, *) {
             try await withThrowingDiscardingTaskGroup { group in
                 var index = 0
                 while let next = try await self.next() {
                     let _index = index
+                    nonisolated(unsafe)
+                    let _next = consume next  // FIXME: isolated?
                     group.addTask {
                         try Task.checkCancellation()
-                        try await body(_index, next)
+                        try await body(_index, _next)
                     }
                     index &+= 1
                 }
@@ -92,9 +97,11 @@ extension ConcurrentStream {
                 var index = 0
                 while let next = try await self.next() {
                     let _index = index
+                    nonisolated(unsafe) 
+                    let _next = consume next  // FIXME: isolated?
                     group.addTask {
                         try Task.checkCancellation()
-                        try await body(_index, next)
+                        try await body(_index, _next)
                     }
                     index &+= 1
                 }

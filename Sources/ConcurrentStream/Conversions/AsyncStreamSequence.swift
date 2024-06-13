@@ -50,7 +50,7 @@ public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence wh
             do {
                 return try await source.next()
             } catch {
-                throw error as! SourceStream.Failure
+                throw error
             }
         }
         

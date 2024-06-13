@@ -16,5 +16,5 @@ let package = Package(
         .target(name: "ConcurrentStream", swiftSettings: [.enableUpcomingFeature("FullTypedThrows"), .enableExperimentalFeature("NoncopyableGenerics")]),
         .executableTarget(name: "Client", dependencies: ["ConcurrentStream"]),
         .testTarget(name: "ConcurrentStreamTests", dependencies: ["ConcurrentStream"]),
-    ]
+    ], swiftLanguageVersions: [.v6]
 )
