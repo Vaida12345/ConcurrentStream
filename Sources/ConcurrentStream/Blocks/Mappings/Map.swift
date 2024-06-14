@@ -13,6 +13,9 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
     /// The source stream
     private let source: SourceStream
     
+    /// The continuation of AsyncThrowingStream, used for cancelation.
+    private let continuation: AsyncThrowingStream<Word, any Error>.Continuation
+    
     
     /// The iterator of `taskGroup`
     private var base: AsyncThrowingStream<Word, any Error>.Iterator?
@@ -34,6 +37,7 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
         self.source = source
         let (_stream, continuation) = AsyncThrowingStream.makeStream(of: Word.self)
         self.base = _stream.makeAsyncIterator()
+        self.continuation = continuation
         
         self.task = Task.detached { [_cancel = self.cancel] in
             do {
@@ -103,9 +107,10 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
     }
     
     public nonisolated var cancel: @Sendable () -> Void {
-        { [_taskCancel = self.task?.cancel, _cancel = source.cancel] in
+        { [_taskCancel = self.task?.cancel, _cancel = source.cancel, _finish = continuation.finish] in
             _taskCancel?()
             _cancel()
+            _finish(CancellationError())
         }
     }
     

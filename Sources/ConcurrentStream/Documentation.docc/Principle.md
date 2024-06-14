@@ -155,19 +155,26 @@ The sequence in which results are yielded upon invoking `next` corresponds to th
 
 As a `taskGroup` waits for all of its child tasks to complete before returning, the `taskGroup` used in the iterator is detached. Hence manual task cancelation is required.
 
+- Note: Due to the nature of concurrency, if the closure does not implement checking cancelation, the submitted tasks to ``ConcurrentStream/ConcurrentStream/map(_:)-4q8b6``-like streams cannot be cancelled until these closure finish.
 
 The tasks can be cancelled in three ways.
 - Releasing reference to the `stream`. (Cancelation in `deinit`)
 - Automatically cancelled when the parent `Task` executing  ``ConcurrentStream/ConcurrentStream/next()`` is cancelled.
 - Calling ``ConcurrentStream/ConcurrentStream/cancel`` explicitly.
 
-This should cover the common use case. In the following example, the stream is canceled due to the release of its reference, caused by the exit of the function, which in turn is triggered by the thrown error.
-```swift
-var iterator = await ConcurrentStreamOrderedIterator(stream: stream)
+The task is also cancelled automatically when:
+- An error is thrown in the closure (``ConcurrentStream/ConcurrentStream/map(_:)-4q8b6``-like).
+- Child streams are cancelled. (Note: This only goes up, not down)
 
-for _ in 0...1000 {
-    try Task.checkCancellation()
-    heavyWork(i: 0)
+After the task is cancelled, successive calls to ``ConcurrentStream/ConcurrentStream/next()`` depends on its origin. The stream itself does not store the state of whether it has been cancelled.
+- If it does not evolve ``ConcurrentStream/ConcurrentStream/map(_:)-4q8b6``-like: The method is unaffected, why would it be?
+- Otherwise this method returns `nil` immediately.
+
+
+This should cover the common use case. In the following example, the stream is canceled immediately due to the release of its reference, caused by the exit of the function.
+```swift
+Task {
+    let stream = (1...10).stream.map { $0 }
 }
 ```
 
@@ -180,9 +187,11 @@ try await withTaskCancellationHandler {
     ...
     stream.foo()
 } onCancel: {
-    iterator.cancel()
+    stream.cancel()
 }
 ```
+
+This is of an insurance than requirements.
 
 As another example, the cancellation of the stream occurs while awaiting the retrieval of the `next` element.
 ```swift

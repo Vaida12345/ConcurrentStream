@@ -21,6 +21,14 @@ internal extension Tag {
     
     @Tag static var cancelation: Self
     
+    @Tag static var cancelationByReleasingReference: Self
+    
+    @Tag static var explicitCancel: Self
+    
+    @Tag static var cancelationByParentTask: Self
+    
+    @Tag static var cancelatioInNext: Self
+    
 }
 
 @Suite("Concurrent Stream")
