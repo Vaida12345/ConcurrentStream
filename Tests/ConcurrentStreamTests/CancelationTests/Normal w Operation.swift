@@ -7,11 +7,11 @@ import Synchronization
 #if canImport(Testing)
 import Testing
 
-@Suite("Cancelation Tests With operations", .tags(.cancelation, .lightweightOperations))
+@Suite("Cancelation Tests With operations", .tags(.cancelation, .lightweightOperations), .serialized)
 struct CancelationTestsWithOperations {
     
     // The job may have been scheduled, and impossible to cancel in this Test
-    let acceptableDistance = 20
+    let acceptableDistance = 15
     
     // The stream is deallocated when the task is cancelled, hence the life time of the closure ended, calling cancelation in deinit.
     @available(macOS 15.0, *)
