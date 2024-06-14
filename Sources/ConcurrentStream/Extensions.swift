@@ -90,12 +90,12 @@ extension ConcurrentStream {
                         await Task.yield()
                         try Task.checkCancellation()
                         
-                        group.addTask {
+                        guard group.addTaskUnlessCancelled(priority: nil, operation: {
                             await Task.yield()
                             try Task.checkCancellation()
                             
                             try await body(_index, _next)
-                        }
+                        }) else { throw CancellationError() } // manually throw to catch.
                         index &+= 1
                     }
                 }
@@ -110,12 +110,12 @@ extension ConcurrentStream {
                         await Task.yield()
                         try Task.checkCancellation()
                         
-                        group.addTask {
+                        guard group.addTaskUnlessCancelled(priority: nil, operation: {
                             await Task.yield()
                             try Task.checkCancellation()
                             
                             try await body(_index, _next)
-                        }
+                        }) else { throw CancellationError() }
                         index &+= 1
                     }
                 }

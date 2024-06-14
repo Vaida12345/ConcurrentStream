@@ -69,8 +69,8 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
                     continuation.finish()
                 }
             } catch {
-                _cancel()
                 continuation.finish(throwing: error)
+                _cancel() // finish before cancel, otherwise `_cancel` would call `continuation.finish` again.
             }
         }
     }

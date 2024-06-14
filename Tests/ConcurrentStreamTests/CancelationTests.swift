@@ -131,7 +131,7 @@ struct CancellationTests {
             nonisolated(unsafe)
             var stream: (any ConcurrentStream<Void, Never>)? = nil
             
-            Task.detached {
+            let task = Task.detached {
                 await withTaskCancellationHandler {
                     stream = await (1...100).stream.map { _ in
                         heavyJob()
@@ -152,6 +152,7 @@ struct CancellationTests {
                 heavyJob()
             }
             
+            task.cancel()
             let currentCounter = counter.load(ordering: .sequentiallyConsistent)
             try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
             

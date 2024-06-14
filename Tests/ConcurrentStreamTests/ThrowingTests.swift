@@ -15,6 +15,16 @@ import Testing
 struct ConcurrentStreamThrowingTests {
     
     @Test
+    func mapThrowing() async throws {
+        let stream = await (1...100).stream.map { _ in
+            throw TestError.example
+        }
+        await #expect(throws: TestError.example) {
+            try await stream.next()
+        }
+    }
+    
+    @Test
     func compactThrowing() async throws {
         let stream = await (1...100).stream.compactMap { _ in
             throw TestError.example
