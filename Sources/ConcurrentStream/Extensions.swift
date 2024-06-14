@@ -78,34 +78,50 @@ extension ConcurrentStream {
     /// - throws: This function could throw ``Failure``, `E`, or `CancelationError`.
     @inlinable
     public func forEach<E>(_ body: @escaping @Sendable (_ index: Int, _ element: Element) async throws(E) -> Void) async throws(any Error) where E: Error {
-        if #available(macOS 14, iOS 17, watchOS 10, tvOS 17, *) {
-            try await withThrowingDiscardingTaskGroup { group in
-                var index = 0
-                while let next = try await self.next() {
-                    let _index = index
-                    nonisolated(unsafe)
-                    let _next = consume next  // Nonisolated as I do not want to restrain `Element` to `Sendable` for now.
-                    group.addTask {
+        do {
+            if #available(macOS 14, iOS 17, watchOS 10, tvOS 17, *) {
+                try await withThrowingDiscardingTaskGroup { group in
+                    var index = 0
+                    while let next = try await self.next() {
+                        let _index = index
+                        nonisolated(unsafe)
+                        let _next = consume next  // Nonisolated as I do not want to restrain `Element` to `Sendable` for now.
+                        
+                        await Task.yield()
                         try Task.checkCancellation()
-                        try await body(_index, _next)
+                        
+                        group.addTask {
+                            await Task.yield()
+                            try Task.checkCancellation()
+                            
+                            try await body(_index, _next)
+                        }
+                        index &+= 1
                     }
-                    index &+= 1
+                }
+            } else {
+                try await withThrowingTaskGroup(of: Void.self) { group in
+                    var index = 0
+                    while let next = try await self.next() {
+                        let _index = index
+                        nonisolated(unsafe)
+                        let _next = consume next  // FIXME: isolated?
+                        
+                        await Task.yield()
+                        try Task.checkCancellation()
+                        
+                        group.addTask {
+                            await Task.yield()
+                            try Task.checkCancellation()
+                            
+                            try await body(_index, _next)
+                        }
+                        index &+= 1
+                    }
                 }
             }
-        } else {
-            try await withThrowingTaskGroup(of: Void.self) { group in
-                var index = 0
-                while let next = try await self.next() {
-                    let _index = index
-                    nonisolated(unsafe) 
-                    let _next = consume next  // FIXME: isolated?
-                    group.addTask {
-                        try Task.checkCancellation()
-                        try await body(_index, _next)
-                    }
-                    index &+= 1
-                }
-            }
+        } catch {
+            self.cancel()
         }
     }
     

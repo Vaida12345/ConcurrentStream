@@ -165,10 +165,11 @@ The tasks can be cancelled in three ways.
 The task is also cancelled automatically when:
 - An error is thrown in the closure (``ConcurrentStream/ConcurrentStream/map(_:)-4q8b6``-like).
 - Child streams are cancelled. (Note: This only goes up, not down)
+- Task is cancelled during a bridge method, such as ``ConcurrentStream/ConcurrentStream/sequence``. With the exception of ``ConcurrentStream/ConcurrentStream/async``, which must be cancelled manually.
 
 After the task is cancelled, successive calls to ``ConcurrentStream/ConcurrentStream/next()`` depends on its origin. The stream itself does not store the state of whether it has been cancelled.
 - If it does not evolve ``ConcurrentStream/ConcurrentStream/map(_:)-4q8b6``-like: The method is unaffected, why would it be?
-- Otherwise this method returns `nil` immediately.
+- Otherwise this method would return anything left in the buffer, and `nil` in subsequence calls.
 
 
 This should cover the common use case. In the following example, the stream is canceled immediately due to the release of its reference, caused by the exit of the function.
@@ -185,13 +186,12 @@ let stream = some ConcurrentStream
 
 try await withTaskCancellationHandler {
     ...
-    stream.foo()
 } onCancel: {
     stream.cancel()
 }
 ```
 
-This is of an insurance than requirements.
+This is only required when you **do not** interact with the stream in any way. This cannot be done automatically due to the nature of `ConcurrentStream`: The initializer block returns immediately and dispatches the task. The child-generating task is then run on a different task group, independent of the original one. 
 
 As another example, the cancellation of the stream occurs while awaiting the retrieval of the `next` element.
 ```swift

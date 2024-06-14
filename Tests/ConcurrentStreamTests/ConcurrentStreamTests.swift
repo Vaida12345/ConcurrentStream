@@ -27,7 +27,11 @@ internal extension Tag {
     
     @Tag static var cancelationByParentTask: Self
     
-    @Tag static var cancelatioInNext: Self
+    @Tag static var cancelationInNext: Self
+    
+    @Tag static var cancelationByError: Self
+    
+    @Tag static var cancelationByBridge: Self
     
 }
 
