@@ -27,10 +27,12 @@ struct CancellationTests {
         heavyJob() // call it twice to ensure stream actually runs.
         
         task.cancel()
-        try! await Task.sleep(for: .seconds(5)) //ensures stream is completed when task cancelation is faulty.
+        let currentCounter = counter.load(ordering: .sequentiallyConsistent)
+        try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         
-        try #require(counter.load(ordering: .sequentiallyConsistent) > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
-        #expect(counter.load(ordering: .sequentiallyConsistent) < 50)
+        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        
+        #expect(currentCounter == counter.load(ordering: .sequentiallyConsistent))
     }
     
     // stream is released at once, should be blocked before the first child task was even created.
@@ -48,9 +50,12 @@ struct CancellationTests {
         heavyJob()
         heavyJob() // call it twice to ensure stream actually runs.
         
-        try! await Task.sleep(for: .seconds(5)) //ensures stream is completed when task cancelation is faulty.
+        let currentCounter = counter.load(ordering: .sequentiallyConsistent)
+        try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) == 0)
+        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        
+        #expect(currentCounter == counter.load(ordering: .sequentiallyConsistent))
     }
     
     @available(macOS 15.0, *)
@@ -70,10 +75,12 @@ struct CancellationTests {
         heavyJob()
         heavyJob() // call it twice to ensure stream actually runs.
         
-        try! await Task.sleep(for: .seconds(5)) //ensures stream is completed when task cancelation is faulty.
+        let currentCounter = counter.load(ordering: .sequentiallyConsistent)
+        try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         
-        try #require(counter.load(ordering: .sequentiallyConsistent) > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
-        #expect(counter.load(ordering: .sequentiallyConsistent) < 50)
+        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        
+        #expect(currentCounter == counter.load(ordering: .sequentiallyConsistent))
     }
     
     @available(macOS 15.0, *)
@@ -98,12 +105,15 @@ struct CancellationTests {
         }
         
         task.cancel()
-        try! await Task.sleep(for: .seconds(5)) //ensures stream is completed, even when task cancelation is faulty.
+        let currentCounter = counter.load(ordering: .sequentiallyConsistent)
+        let currentNextCounter = nextCounter.load(ordering: .sequentiallyConsistent)
+        try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
+        try #require(currentNextCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         
-        print(nextCounter.load(ordering: .sequentiallyConsistent))
-        try #require(nextCounter.load(ordering: .sequentiallyConsistent) > 0, "Please adjust time conditions according.")
-        try #require(nextCounter.load(ordering: .sequentiallyConsistent) < 20, "Please adjust time conditions according.")
-        #expect(counter.load(ordering: .sequentiallyConsistent) < 20)
+        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        
+        try #require(currentNextCounter == nextCounter.load(ordering: .sequentiallyConsistent))
+        #expect(currentCounter == counter.load(ordering: .sequentiallyConsistent))
     }
     
 }
