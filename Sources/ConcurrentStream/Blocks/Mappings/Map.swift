@@ -54,8 +54,13 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
                             await Task.yield()
                             try Task.checkCancellation()
                             
-                            let next = try await (_count, work(value))
-                            continuation.yield(next)
+                            do {
+                                let next = try await (_count, work(value))
+                                continuation.yield(next)
+                            } catch {
+                                continuation.finish(throwing: error)
+                                _cancel() // finish before cancel, otherwise `_cancel` would call `continuation.finish` again.
+                            }
                         }) else { throw CancellationError() }
                         
                         count &+= 1
