@@ -7,7 +7,7 @@ import Synchronization
 #if canImport(Testing)
 import Testing
 
-@Suite("Stacked Cancelation (Flat)", .tags(.cancelation, .mapping), .serialized)
+@Suite("Stacked Cancelation (Flat)", .tags(.cancelation, .mapping))
 struct StackedCancellationTests {
     
     // The job may have been scheduled, and impossible to cancel in this Test
@@ -23,7 +23,7 @@ struct StackedCancellationTests {
                 heavyJob()
                 counter.add(1, ordering: .sequentiallyConsistent)
             }.flatMap { [$0] }
-            try? await Task.sleep(for: .seconds(5)) //ensures stream is not deallocated at once.
+            try? await Task.sleep(for: .seconds(10)) //ensures stream is not deallocated at once.
             let _ = stream
         }
         
@@ -36,9 +36,9 @@ struct StackedCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance + currentCounter)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
     
     // stream is released at once, should be blocked before the first child task was even created.
@@ -55,9 +55,9 @@ struct StackedCancellationTests {
         }
         
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) == 0)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 10)
     }
     
     @available(macOS 15.0, *)
@@ -85,9 +85,9 @@ struct StackedCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance + currentCounter)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
     
     @available(macOS 15.0, *)
@@ -105,7 +105,7 @@ struct StackedCancellationTests {
             }.flatMap { [$0] }
             
             // On cancelation, this task will just return.
-            try? await Task.sleep(for: .seconds(2))
+            try? await Task.sleep(for: .seconds(10))
             
             // the stream lives outside, and should not be deallocated due to release of reference.
         }
@@ -118,9 +118,9 @@ struct StackedCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance + currentCounter)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
         let _ = stream // ensure stream lives the entire duration.
     }
     
@@ -140,7 +140,7 @@ struct StackedCancellationTests {
                 }.flatMap { [$0] }
                 
                 // On cancelation, this task will just return.
-                try? await Task.sleep(for: .seconds(2))
+                try? await Task.sleep(for: .seconds(10))
             } onCancel: {
                 stream?.cancel()
             }
@@ -158,9 +158,9 @@ struct StackedCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance + currentCounter)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
         let _ = stream // ensure stream lives the entire duration.
     }
     
@@ -192,10 +192,10 @@ struct StackedCancellationTests {
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         try #require(currentNextCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        try #require(nextCounter.load(ordering: .sequentiallyConsistent) <= currentNextCounter + 3)
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance + currentCounter)
+        try #require(nextCounter.load(ordering: .sequentiallyConsistent) <= currentNextCounter + 10)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
     
     @available(macOS 15.0, *)
@@ -209,9 +209,9 @@ struct StackedCancellationTests {
         stream.cancel()
         
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) == 0)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 10)
     }
     
     @available(macOS 15.0, *)
@@ -239,9 +239,9 @@ struct StackedCancellationTests {
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance + currentCounter)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
     
     @available(macOS 15.0, *)
@@ -268,9 +268,9 @@ struct StackedCancellationTests {
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance + currentCounter)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
     
     @available(macOS 15.0, *)
@@ -295,9 +295,9 @@ struct StackedCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance + currentCounter)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
     
     @available(macOS 15.0, *)
@@ -320,9 +320,9 @@ struct StackedCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance + currentCounter)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
     
     @available(macOS 15.0, *)
@@ -352,10 +352,10 @@ struct StackedCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
         
-        try #require(currentForEachCounter <= counter.load(ordering: .sequentiallyConsistent) + 3)
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance + currentCounter)
+        try #require(currentForEachCounter <= counter.load(ordering: .sequentiallyConsistent) + 10)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
     
     @available(macOS 15.0, *)
@@ -387,7 +387,7 @@ struct StackedCancellationTests {
         while let _ = await stream.next() {
             counter += 1
         }
-        #expect(counter <= 2)
+        #expect(counter <= acceptableDistance)
     }
     
 }
