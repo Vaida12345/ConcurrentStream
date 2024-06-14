@@ -245,6 +245,35 @@ struct StackedCancellationTests {
     }
     
     @available(macOS 15.0, *)
+    @Test(.tags(.cancelationByError))
+    func cancelationByChildError() async throws {
+        let counter = Atomic<Int>(0)
+        let stream = await (1...100).stream.map { _ in
+            heavyJob()
+            counter.add(1, ordering: .sequentiallyConsistent)
+        }.flatMap { Void -> Array<Void> in [Void]; throw TestError.example }
+        
+        await #expect(throws: TestError.example) {
+            try await confirmation(expectedCount: 0) { confirmation in
+                func next() async throws -> Bool {
+                    let next: ()? = try await stream.next()
+                    return true
+                }
+                
+                while try await next() { // should never return, should always throw
+                    confirmation()
+                }
+            }
+        }
+        let currentCounter = counter.load(ordering: .sequentiallyConsistent)
+        try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
+        
+        try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
+        
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance + currentCounter)
+    }
+    
+    @available(macOS 15.0, *)
     @Test("Cancel by bridge to Sequence", .tags(.cancelationByBridge))
     func cancelationBySequence() async throws {
         let counter = Atomic<Int>(0)
