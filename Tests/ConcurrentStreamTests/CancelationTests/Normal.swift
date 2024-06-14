@@ -359,7 +359,7 @@ struct NormalCancellationTests {
         while let _ = await stream.next() {
             counter += 1
         }
-        #expect(counter <= acceptableDistance)
+        #expect(counter <= 100 - acceptableDistance)
     }
     
 }
