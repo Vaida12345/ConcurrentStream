@@ -10,16 +10,13 @@ import Testing
 @Suite("Stacked Cancelation (Compact)", .tags(.cancelation, .mapping))
 struct CompactCancellationTests {
     
-    // The job may have been scheduled, and impossible to cancel in this Test
-    let acceptableDistance = 15
-    
     // The stream is deallocated when the task is cancelled, hence the life time of the closure ended, calling cancelation in deinit.
     @available(macOS 15.0, *)
     @Test(.tags(.cancelationByReleasingReference))
     func deinitCancel() async throws {
         let counter = Atomic<Int>(0)
         let task = Task.detached {
-            let stream = await (1...100).stream.map { _ in
+            let stream = await (1...upperBound).stream.map { _ in
                 heavyJob()
                 counter.add(1, ordering: .sequentiallyConsistent)
             }.compactMap { Optional($0) }
@@ -34,11 +31,11 @@ struct CompactCancellationTests {
         task.cancel() // on cancel, would cause the sleep to return, hence task is returned, stream is released.
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
-        try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
+        try #require(currentCounter < upperBound - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= upperBound - acceptableDistance)
     }
     
     // stream is released at once, should be blocked before the first child task was even created.
@@ -47,7 +44,7 @@ struct CompactCancellationTests {
     func releaseAtOnce() async throws {
         let counter = Atomic<Int>(0)
         Task.detached {
-            let stream = await (1...100).stream.map { _ in
+            let stream = await (1...upperBound).stream.map { _ in
                 heavyJob()
                 counter.add(1, ordering: .sequentiallyConsistent)
             }.compactMap { Optional($0) }
@@ -65,7 +62,7 @@ struct CompactCancellationTests {
     func releaseLater() async throws {
         let counter = Atomic<Int>(0)
         Task.detached {
-            let stream = await (1...100).stream.map { _ in
+            let stream = await (1...upperBound).stream.map { _ in
                 heavyJob()
                 counter.add(1, ordering: .sequentiallyConsistent)
             }.compactMap { Optional($0) }
@@ -83,11 +80,11 @@ struct CompactCancellationTests {
         
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
-        try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
+        try #require(currentCounter < upperBound - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= upperBound - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -100,7 +97,7 @@ struct CompactCancellationTests {
         
         let task = Task.detached {
             await withTaskCancellationHandler {
-                stream = await (1...100).stream.map { _ in
+                stream = await (1...upperBound).stream.map { _ in
                     heavyJob()
                     counter.add(1, ordering: .sequentiallyConsistent)
                 }.compactMap { Optional($0) }
@@ -122,11 +119,11 @@ struct CompactCancellationTests {
         task.cancel()
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
-        try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
+        try #require(currentCounter < upperBound - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= upperBound - acceptableDistance)
         let _ = stream // ensure stream lives the entire duration.
     }
     
@@ -136,7 +133,7 @@ struct CompactCancellationTests {
         let counter = Atomic<Int>(0)
         let nextCounter = Atomic<Int>(0)
         let task = Task.detached {
-            let stream = await (1...100).stream.map { _ in
+            let stream = await (1...upperBound).stream.map { _ in
                 heavyJob()
                 counter.add(1, ordering: .sequentiallyConsistent)
             }.compactMap { Optional($0) }
@@ -155,20 +152,20 @@ struct CompactCancellationTests {
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
         let currentNextCounter = nextCounter.load(ordering: .sequentiallyConsistent)
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
-        try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
+        try #require(currentCounter < upperBound - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         try #require(currentNextCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         try #require(nextCounter.load(ordering: .sequentiallyConsistent) <= currentNextCounter + 10)
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= upperBound - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
     @Test(.tags(.explicitCancel))
     func explicitCancellation() async throws {
         let counter = Atomic<Int>(0)
-        let stream = await (1...100).stream.map { _ in
+        let stream = await (1...upperBound).stream.map { _ in
             heavyJob()
             counter.add(1, ordering: .sequentiallyConsistent)
         }
@@ -184,7 +181,7 @@ struct CompactCancellationTests {
     @Test(.tags(.cancelationByError))
     func cancelationByError() async throws {
         let counter = Atomic<Int>(0)
-        let stream = await (1...100).stream.map { _ in
+        let stream = await (1...upperBound).stream.map { _ in
             heavyJob()
             counter.add(1, ordering: .sequentiallyConsistent)
             throw TestError.example // after add, or would never run
@@ -193,7 +190,7 @@ struct CompactCancellationTests {
         await #expect(throws: TestError.example) {
             try await confirmation(expectedCount: 0) { confirmation in
                 func next() async throws -> Bool {
-                    let next: ()? = try await stream.next()
+                    try await stream.next()
                     return true
                 }
                 
@@ -203,18 +200,18 @@ struct CompactCancellationTests {
             }
         }
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
-        try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
+        try #require(currentCounter < upperBound - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= upperBound - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
     @Test(.tags(.cancelationByError))
     func cancelationByChildError() async throws {
         let counter = Atomic<Int>(0)
-        let stream = await (1...100).stream.map { _ in
+        let stream = await (1...upperBound).stream.map { _ in
             heavyJob()
             counter.add(1, ordering: .sequentiallyConsistent)
         }.compactMap { Optional($0); throw TestError.example }
@@ -222,7 +219,7 @@ struct CompactCancellationTests {
         await #expect(throws: TestError.example) {
             try await confirmation(expectedCount: 0) { confirmation in
                 func next() async throws -> Bool {
-                    let next: ()? = try await stream.next()
+                    try await stream.next()
                     return true
                 }
                 
@@ -232,11 +229,11 @@ struct CompactCancellationTests {
             }
         }
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
-        try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
+        try #require(currentCounter < upperBound - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= upperBound - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -244,7 +241,7 @@ struct CompactCancellationTests {
     func cancelationBySequence() async throws {
         let counter = Atomic<Int>(0)
         let task = Task.detached {
-            let stream = await (1...100).stream.map { _ in
+            let stream = await (1...upperBound).stream.map { _ in
                 heavyJob()
                 counter.add(1, ordering: .sequentiallyConsistent)
             }.compactMap { Optional($0) }
@@ -259,18 +256,18 @@ struct CompactCancellationTests {
         
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
-        try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
+        try #require(currentCounter < upperBound - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= upperBound - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
     @Test("Cancel by bridge to Async", .tags(.cancelationByBridge))
     func cancelationByAsync() async throws {
         let counter = Atomic<Int>(0)
-        let stream = await (1...100).stream.map { _ in
+        let stream = await (1...upperBound).stream.map { _ in
             heavyJob()
             counter.add(1, ordering: .sequentiallyConsistent)
         }.compactMap { Optional($0) }
@@ -284,11 +281,11 @@ struct CompactCancellationTests {
         
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
-        try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
+        try #require(currentCounter < upperBound - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= upperBound - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -298,7 +295,7 @@ struct CompactCancellationTests {
         let forEachCounter = Atomic<Int>(0)
         
         let task = Task.detached {
-            let stream = await (1...100).stream.map { _ in
+            let stream = await (1...upperBound).stream.map { _ in
                 heavyJob()
                 counter.add(1, ordering: .sequentiallyConsistent)
             }.compactMap { Optional($0) }
@@ -316,12 +313,12 @@ struct CompactCancellationTests {
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
         let currentForEachCounter = forEachCounter.load(ordering: .sequentiallyConsistent)
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
-        try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
+        try #require(currentCounter < upperBound - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         try #require(currentForEachCounter <= counter.load(ordering: .sequentiallyConsistent) + 10)
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= upperBound - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -330,7 +327,7 @@ struct CompactCancellationTests {
         let counter = Atomic<Int>(0)
         let forEachCounter = Atomic<Int>(0)
         
-        let stream = await (1...100).stream.map { _ in
+        let stream = await (1...upperBound).stream.map { _ in
             heavyJob()
             counter.add(1, ordering: .sequentiallyConsistent)
         }.compactMap { Optional($0) }
@@ -340,20 +337,20 @@ struct CompactCancellationTests {
             throw TestError.example // throw after forEach
         }
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
-        #expect(forEachCounter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= upperBound - acceptableDistance)
+        #expect(forEachCounter.load(ordering: .sequentiallyConsistent) <= upperBound - acceptableDistance)
     }
     
     @Test(.timeLimit(.minutes(1)))
     func useAfterCancel() async {
-        let stream = await (1...100).stream.map { $0 }.compactMap { Optional($0) }
+        let stream = await (1...upperBound).stream.map { $0 }.compactMap { Optional($0) }
         stream.cancel()
         
         var counter = 0
         while let _ = await stream.next() {
             counter += 1
         }
-        #expect(counter <= 100 - acceptableDistance)
+        #expect(counter <= upperBound - acceptableDistance)
     }
     
 }
