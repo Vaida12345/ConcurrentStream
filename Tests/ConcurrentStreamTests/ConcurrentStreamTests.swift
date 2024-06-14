@@ -19,6 +19,8 @@ internal extension Tag {
     
     @Tag static var throwingOverload: Self
     
+    @Tag static var cancelation: Self
+    
 }
 
 @Suite("Concurrent Stream")
