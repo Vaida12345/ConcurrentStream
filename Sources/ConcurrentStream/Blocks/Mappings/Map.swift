@@ -50,13 +50,11 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
                             return
                         }
                         
-//                        print("add task \(_count)")
                         group.addTask {
                             await Task.yield()
                             try Task.checkCancellation()
                             
                             let next = try await (_count, work(value))
-//                            print("finished \(_count)")
                             continuation.yield(next)
                         }
                         
@@ -67,6 +65,7 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
                     continuation.finish()
                 }
             } catch {
+                _cancel()
                 continuation.finish(throwing: error)
             }
         }
@@ -85,7 +84,7 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
                 
                 guard let word = try await base?.next() else {
                     return nil
-                } // the only place where `nil` is returned.
+                } // the only place where `nil` is returned, other than `CancellationError`.
                 
                 _buffer.updateValue(word.1, forKey: word.0)
             }
