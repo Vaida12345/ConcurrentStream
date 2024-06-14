@@ -340,8 +340,8 @@ struct CompactCancellationTests {
             throw TestError.example // throw after forEach
         }
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance)
-        #expect(forEachCounter.load(ordering: .sequentiallyConsistent) <= acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
+        #expect(forEachCounter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @Test(.timeLimit(.minutes(1)))

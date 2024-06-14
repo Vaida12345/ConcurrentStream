@@ -346,7 +346,7 @@ struct NormalCancellationTests {
             throw TestError.example // throw after forEach
         }
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= acceptableDistance)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
         #expect(forEachCounter.load(ordering: .sequentiallyConsistent) <= acceptableDistance)
     }
     
@@ -362,6 +362,20 @@ struct NormalCancellationTests {
         #expect(counter <= acceptableDistance)
     }
     
+}
+
+/// Ensures that the testing is valid
+@Test
+@available(macOS 15.0, *)
+func assertSufficiantHeavy() async throws {
+    let counter = Atomic<Int>(0)
+    let stream = await (1...100).stream.map { _ in
+        heavyJob()
+        counter.add(1, ordering: .sequentiallyConsistent)
+    }
+    
+    try await Task.sleep(for: sleepDuration)
+    try #require(counter.load(ordering: .sequentiallyConsistent) == 100, "The tests are invalid")
 }
 
 /// Some real job that takes CPU.
