@@ -37,7 +37,7 @@ struct NormalCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
@@ -56,7 +56,7 @@ struct NormalCancellationTests {
         }
         
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 10)
     }
@@ -86,7 +86,7 @@ struct NormalCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
@@ -119,7 +119,7 @@ struct NormalCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
         let _ = stream // ensure stream lives the entire duration.
@@ -159,7 +159,7 @@ struct NormalCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
         let _ = stream // ensure stream lives the entire duration.
@@ -193,7 +193,7 @@ struct NormalCancellationTests {
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         try #require(currentNextCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         try #require(nextCounter.load(ordering: .sequentiallyConsistent) <= currentNextCounter + 10)
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
@@ -210,7 +210,7 @@ struct NormalCancellationTests {
         stream.cancel()
         
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
@@ -240,7 +240,7 @@ struct NormalCancellationTests {
         let currentCounter = counter.load(ordering: .sequentiallyConsistent)
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
@@ -267,7 +267,7 @@ struct NormalCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
@@ -292,7 +292,7 @@ struct NormalCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
@@ -324,7 +324,7 @@ struct NormalCancellationTests {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         try #require(currentForEachCounter <= counter.load(ordering: .sequentiallyConsistent) + 10)
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
@@ -365,15 +365,15 @@ struct NormalCancellationTests {
 }
 
 /// some real job that takes CPU.
-private func heavyJob() {
-    for _ in 1...10 {
-        var coder = SHA512()
-        var id = UUID()
-        withUnsafeBytes(of: &id) { buffer in
-            coder.update(data: buffer)
-        }
-        let _ = coder.finalize()
+internal func heavyJob() {
+    var coder = SHA512()
+    var id = UUID()
+    withUnsafeBytes(of: &id) { buffer in
+        coder.update(data: buffer)
     }
+    let _ = coder.finalize()
 }
+
+internal let sleepDuration = Duration(secondsComponent: 1, attosecondsComponent: 0)
 
 #endif

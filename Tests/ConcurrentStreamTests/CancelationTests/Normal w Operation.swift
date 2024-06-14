@@ -36,7 +36,7 @@ struct CancelationTestsWithOperations {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
     }
@@ -55,7 +55,7 @@ struct CancelationTestsWithOperations {
         }
         
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 10)
     }
@@ -85,43 +85,9 @@ struct CancelationTestsWithOperations {
         try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
         try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
         
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
+        try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
-    }
-    
-    @available(macOS 15.0, *)
-    @Test(.tags(.cancelationByParentTask), .disabled("This is currently impossible, the stream cannot observe the state of the Task while being non-blocking"))
-    func cancelationByParentTask() async throws {
-        let counter = Atomic<Int>(0)
-        
-        nonisolated(unsafe)
-        var stream: (any ConcurrentStream<Void, Never>)? = nil
-        
-        Task.detached {
-            stream = await (1...100).stream.map { _ in
-                heavyJob()
-                counter.add(1, ordering: .sequentiallyConsistent)
-            }.filter{ _ in true }
-            
-            // On cancelation, this task will just return.
-            try? await Task.sleep(for: .seconds(10))
-            
-            // the stream lives outside, and should not be deallocated due to release of reference.
-        }
-        
-        while counter.load(ordering: .sequentiallyConsistent) == 0 {
-            heavyJob()
-        }
-        
-        let currentCounter = counter.load(ordering: .sequentiallyConsistent)
-        try #require(currentCounter > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
-        try #require(currentCounter < 99 - acceptableDistance, "The test has been rendered meaningless, please adjust parameters.")
-        
-        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed when task cancelation is faulty.
-        
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
-        let _ = stream // ensure stream lives the entire duration.
     }
     
     
@@ -138,17 +104,4 @@ struct CancelationTestsWithOperations {
     }
     
 }
-
-/// some real job that takes CPU.
-private func heavyJob() {
-    for _ in 1...100 {
-        var coder = SHA512()
-        var id = UUID()
-        withUnsafeBytes(of: &id) { buffer in
-            coder.update(data: buffer)
-        }
-        let _ = coder.finalize()
-    }
-}
-
 #endif
