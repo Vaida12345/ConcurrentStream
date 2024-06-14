@@ -88,8 +88,6 @@ extension ConcurrentStream {
                         let _next = consume next  // Nonisolated as I do not want to restrain `Element` to `Sendable` for now.
                         
                         await Task.yield()
-                        try Task.checkCancellation()
-                        
                         guard group.addTaskUnlessCancelled(priority: nil, operation: {
                             await Task.yield()
                             try Task.checkCancellation()
@@ -108,8 +106,6 @@ extension ConcurrentStream {
                         let _next = consume next  // FIXME: isolated?
                         
                         await Task.yield()
-                        try Task.checkCancellation()
-                        
                         guard group.addTaskUnlessCancelled(priority: nil, operation: {
                             await Task.yield()
                             try Task.checkCancellation()

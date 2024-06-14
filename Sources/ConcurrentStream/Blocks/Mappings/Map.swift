@@ -49,18 +49,14 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
                         let value = value
                         
                         await Task.yield()
-                        guard !Task.isCancelled else {
-                            _cancel()
-                            return
-                        }
                         
-                        group.addTask {
+                        guard group.addTaskUnlessCancelled(priority: nil, operation: {
                             await Task.yield()
                             try Task.checkCancellation()
                             
                             let next = try await (_count, work(value))
                             continuation.yield(next)
-                        }
+                        }) else { throw CancellationError() }
                         
                         count &+= 1
                     }

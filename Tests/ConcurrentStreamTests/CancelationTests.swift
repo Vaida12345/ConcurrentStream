@@ -230,10 +230,10 @@ struct CancellationTests {
                 try await confirmation(expectedCount: 0) { confirmation in
                     func next() async throws -> Bool {
                         let next: ()? = try await stream.next()
-                        return next == nil || next != nil
+                        return true
                     }
                     
-                    while try await next() { // should never returns, should always throws
+                    while try await next() { // should never return, should always throw
                         confirmation()
                     }
                 }
