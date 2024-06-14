@@ -24,9 +24,11 @@ private final class ConcurrentSerializedStream<LHS, RHS, Failure>: ConcurrentStr
         }
     }
     
-    consuming func cancel() {
-        lhs.cancel()
-        rhs.cancel()
+    nonisolated var cancel: @Sendable () -> Void {
+        { [ _lhs = lhs.cancel, _rhs = rhs.cancel] in
+            _lhs()
+            _rhs()
+        }
     }
     
     

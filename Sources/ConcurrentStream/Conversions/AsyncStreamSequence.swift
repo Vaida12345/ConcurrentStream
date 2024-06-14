@@ -9,7 +9,7 @@
 
 /// An `AsyncSequence` bridged from ``ConcurrentStream``.
 ///
-/// You can use ``cancel()`` to cancel the underlying `stream`. For more information, see ``cancel()``.
+/// You can use ``cancel`` to cancel the underlying `stream`. For more information, see ``cancel``.
 @available(macOS 15, *)
 public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence where SourceStream: ConcurrentStream {
     
@@ -26,6 +26,7 @@ public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence wh
         self.source = source
     }
     
+    
     /// Cancels the upstreams of this async sequence.
     ///
     /// After bridging a `stream` to a `AsyncSequence`, the ways in which the `stream` can be cancelled is reduced. Nevertheless, the underlying stream can be cancelled in the following ways.
@@ -33,8 +34,10 @@ public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence wh
     /// - Calling this method explicitly.
     ///
     /// If the this sequence is once again transform into another `AsyncSequence`. You could only rely on the error thrown on task cancelation. After the error is thrown, the contents in the closure is released, calling cancellation in `deinit`.
-    public func cancel() {
-        source.cancel()
+    public nonisolated var cancel: @Sendable () -> Void {
+        { [_cancel = source.cancel] in
+            _cancel()
+        }
     }
     
     

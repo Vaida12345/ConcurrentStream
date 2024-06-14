@@ -31,8 +31,10 @@ fileprivate final class ConcurrentCompactedStream<Unwrapped, SourceStream>: Conc
         }
     }
     
-    consuming func cancel() {
-        self.source.cancel()
+    nonisolated var cancel: @Sendable () -> Void {
+        { [_cancel = source.cancel] in
+            _cancel()
+        }
     }
     
     typealias Element = Unwrapped

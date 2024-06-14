@@ -19,8 +19,9 @@ private final class ConcurrentSequenceStream<Source>: ConcurrentStream where Sou
         iterator.next()
     }
     
-    fileprivate func cancel() {
+    nonisolated var cancel: @Sendable () -> Void {
         // do nothing
+        return {}
     }
     
     fileprivate typealias Element = Source.Element

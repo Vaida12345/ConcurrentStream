@@ -5,7 +5,7 @@ The ``ConcurrentStream`` aims to combine the functionality of execution in paral
 ```swift
 let stream = (1...100).stream.map(heavyWork)
 
-while let next = try await stream.next() {
+while let next = await stream.next() {
     ...
 }
 ```
@@ -49,7 +49,7 @@ As the name suggests, the package provides a stream, not a sequence. Which means
 
 This framework also offers eazy ways to convert between stream and sequence. For example,
 ```swift
-for i in try await (1...10).stream.sequence {
+for i in await (1...10).stream.sequence {
     print(i)
 }
 ```
@@ -65,4 +65,6 @@ With arguably similar performance.
 
 **To read more about choice and implementation details, see [Principle](/Sources/ConcurrentStream/Documentation.docc/Principle.md)**
 
+### Typed Throws
 
+With `Swift6.0`, this package also has typed throws implemented. You no longer need to call `try` when it is impossible to throw.

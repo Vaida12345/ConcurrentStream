@@ -159,7 +159,7 @@ As a `taskGroup` waits for all of its child tasks to complete before returning, 
 The tasks can be cancelled in three ways.
 - Releasing reference to the `stream`. (Cancelation in `deinit`)
 - Automatically cancelled when the parent `Task` executing  ``ConcurrentStream/ConcurrentStream/next()`` is cancelled.
-- Calling ``ConcurrentStream/ConcurrentStream/cancel()`` explicitly.
+- Calling ``ConcurrentStream/ConcurrentStream/cancel`` explicitly.
 
 This should cover the common use case. In the following example, the stream is canceled due to the release of its reference, caused by the exit of the function, which in turn is triggered by the thrown error.
 ```swift

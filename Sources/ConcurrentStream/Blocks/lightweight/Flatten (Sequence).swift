@@ -39,8 +39,10 @@ fileprivate final class ConcurrentSequenceFlattenStream<SourceStream>: Concurren
         }
     }
     
-    consuming func cancel() {
-        self.source.cancel()
+    nonisolated var cancel: @Sendable () -> Void {
+        { [_cancel = source.cancel] in
+            _cancel()
+        }
     }
     
     typealias Element = SourceStream.Element.Element

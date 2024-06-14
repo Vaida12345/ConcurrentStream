@@ -17,8 +17,8 @@ extension ConcurrentStream {
     @inlinable
     public var sequence: Array<Element> {
         consuming get async throws(Failure) {
-            nonisolated(unsafe) // FIXME: isolated?
             let stream = consume self
+            let _cancel = stream.cancel
             
             do {
                 return try await withTaskCancellationHandler {
@@ -30,10 +30,10 @@ extension ConcurrentStream {
                     
                     return array
                 } onCancel: {
-                    stream.cancel()
+                    _cancel()
                 }
             } catch {
-                stream.cancel()
+                _cancel()
                 throw error as! Failure
             }
         }
@@ -84,7 +84,7 @@ extension ConcurrentStream {
                 while let next = try await self.next() {
                     let _index = index
                     nonisolated(unsafe)
-                    let _next = consume next  // FIXME: isolated?
+                    let _next = consume next  // Nonisolated as I do not want to restrain `Element` to `Sendable` for now.
                     group.addTask {
                         try Task.checkCancellation()
                         try await body(_index, _next)

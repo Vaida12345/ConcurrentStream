@@ -34,8 +34,10 @@ fileprivate final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream w
         }
     }
     
-    consuming func cancel() {
-        self.source.cancel()
+    nonisolated var cancel: @Sendable () -> Void {
+        { [_cancel = source.cancel] in
+            _cancel()
+        }
     }
     
     typealias Element = SourceStream.Element

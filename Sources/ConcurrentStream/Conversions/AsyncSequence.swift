@@ -20,8 +20,9 @@ private final class ConcurrentAsyncSequenceStream<Source>: ConcurrentStream wher
         try await iterator.next(isolation: nil)
     }
     
-    fileprivate func cancel() {
+    nonisolated var cancel: @Sendable () -> Void {
         // do nothing
+        return {}
     }
     
     fileprivate typealias Element = Source.Element

@@ -19,8 +19,9 @@ private final class ConcurrentNSEnumeratorStream<Element>: ConcurrentStream {
         self.iterator.nextObject() as? Element
     }
     
-    fileprivate func cancel() {
+    nonisolated var cancel: @Sendable () -> Void {
         // do nothing
+        return {}
     }
     
     

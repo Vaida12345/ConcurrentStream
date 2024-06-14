@@ -22,7 +22,7 @@ public protocol ConcurrentStream<Element, Failure>: AnyObject { // FIXME: ~Copya
     /// The stream can be cancelled in three ways.
     /// - Releasing reference to the `stream`. (Cancelation in `deinit`)
     /// - Automatically cancelled when the parent `Task` executing  ``ConcurrentStream/ConcurrentStream/next()`` is cancelled.
-    /// - Calling ``ConcurrentStream/ConcurrentStream/cancel()`` explicitly.
+    /// - Calling ``ConcurrentStream/ConcurrentStream/cancel`` explicitly.
     ///
     /// This should cover the common use case. You can read details about the `ConcurrentStream` [here](<doc:Principle>).
     ///
@@ -39,7 +39,9 @@ public protocol ConcurrentStream<Element, Failure>: AnyObject { // FIXME: ~Copya
     /// >     iterator.cancel()
     /// > }
     /// > ```
-    consuming nonisolated func cancel()
+    ///
+    /// - Tips: With `Swift6.0`, this method is now declared as a property. Nevertheless, you are recommended to use this as a function.
+    nonisolated var cancel: @Sendable () -> Void { get }
     
     /// The type of element produced by this stream.
     associatedtype Element

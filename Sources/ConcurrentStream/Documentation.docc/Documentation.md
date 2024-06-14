@@ -9,7 +9,7 @@ The ``ConcurrentStream`` aims to combine the functionality of execution in paral
 ```swift
 let stream = (1...100).stream.map(heavyWork)
 
-while let next = try await stream.next() {
+while let next = await stream.next() {
     ...
 }
 ```
@@ -33,8 +33,6 @@ You can add this framework as a dependency to your Xcode project by clicking Fil
 ```
 https://github.com/Vaida12345/ConcurrentStream
 ```
-
-> Tip: The `ConcurrentStream` is part of the `Stratum` framework. If you have declared `Stratum` as dependency, you can use `ConcurrentStream` by simply `import`ing the framework.
 
 
 ## Topics

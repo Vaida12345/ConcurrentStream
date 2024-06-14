@@ -8,7 +8,7 @@
 
 
 /// The primary associative values are: The returned element, The source stream, the error that this stream throws, the error that the work closure throws.
-fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure>: ConcurrentStream, @unchecked Sendable where SourceStream: ConcurrentStream, TransformFailure: Error, Failure: Error {
+fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure>: ConcurrentStream where SourceStream: ConcurrentStream, TransformFailure: Error, Failure: Error {
     
     /// The source stream
     private let source: SourceStream
@@ -35,18 +35,18 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
         let (_stream, continuation) = AsyncThrowingStream.makeStream(of: Word.self)
         self.base = _stream.makeAsyncIterator()
         
-        self.task = Task.detached { [weak self] in
+        self.task = Task.detached { [_cancel = self.cancel] in
             do {
                 try await withThrowingTaskGroup(of: Void.self) { group in
                     var count = 0
                     while let value = try await source.next() {
                         let _count = count
-                        nonisolated(unsafe)
+                        nonisolated(unsafe) // Nonisolated as I do not want to restrain `Element` to `Sendable` for now.
                         let value = value
                         
                         await Task.yield()
                         guard !Task.isCancelled else {
-                            self?.cancel()
+                            _cancel()
                             return
                         }
                         
@@ -103,9 +103,11 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
         }
     }
     
-    public func cancel() {
-        task?.cancel()
-        source.cancel()
+    public nonisolated var cancel: @Sendable () -> Void {
+        { [_taskCancel = self.task?.cancel, _cancel = source.cancel] in
+            _taskCancel?()
+            _cancel()
+        }
     }
     
     /// The Internal stored word
