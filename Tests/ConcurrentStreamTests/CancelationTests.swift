@@ -220,11 +220,14 @@ struct CancellationTests {
                 counter.add(1, ordering: .sequentiallyConsistent)
                 throw TestError.example // after add, or would never run
             }
-            do {
-                while let next = try await stream.next() {
-                    
+            
+            await #expect(throws: TestError.example) {
+                try await confirmation(expectedCount: 0) { confirmation in
+                    while let _ = try await stream.next() {
+                        confirmation()
+                    }
                 }
-            } catch {}
+            }
             
             try! await Task.sleep(for: .seconds(2)) //ensures stream is completed when task cancelation is faulty.
             
