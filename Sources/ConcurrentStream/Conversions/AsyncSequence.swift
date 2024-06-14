@@ -7,7 +7,7 @@
 //
 
 
-@available(macOS 15, *)
+@available(macOS 15, iOS 18, *)
 private final class ConcurrentAsyncSequenceStream<Source>: ConcurrentStream where Source: AsyncSequence {
     
     private var iterator: Source.AsyncIterator
@@ -46,7 +46,7 @@ extension AsyncSequence {
     /// - Returns: The iterator for the sequence is created before returning.
     ///
     /// - Complexity: O(*1*).
-    @available(macOS 15, *)
+    @available(macOS 15, iOS 18, *)
     public var stream: some ConcurrentStream<Element, Failure> {
         consuming get {
             ConcurrentAsyncSequenceStream(source: consume self)
