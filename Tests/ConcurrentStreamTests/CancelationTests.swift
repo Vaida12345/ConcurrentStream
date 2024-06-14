@@ -10,9 +10,10 @@ import Testing
 @Suite("Cancelation Tests", .tags(.cancelation))
 struct CancellationTests {
     
+    // The stream is deallocated when the task is cancelled, hence the life time of the closure ended, calling cancelation in deinit.
     @available(macOS 15.0, *)
     @Test
-    func taskCancellation() async throws {
+    func deinitCancel() async throws {
         let counter = Atomic<Int>(0)
         let task = Task.detached {
             let stream = await (1...100).stream.map { _ in
@@ -72,6 +73,33 @@ struct CancellationTests {
         try! await Task.sleep(for: .seconds(10)) //ensures stream is completed, even when task cancelation is faulty.
         
         try #require(counter.load(ordering: .acquiring) > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
+        #expect(counter.load(ordering: .acquiring) < 50)
+    }
+    
+    @available(macOS 15.0, *)
+    @Test
+    func cancelInNext() async throws {
+        let counter = Atomic<Int>(0)
+        let nextCounter = Atomic<Int>(0)
+        let task = Task.detached {
+            let stream = await (1...100).stream.map { _ in
+                heavyJob()
+                counter.add(1, ordering: .relaxed)
+            }
+            
+            while let next = await stream.next() {
+                nextCounter.add(1, ordering: .relaxed)
+            }
+        }
+        
+        heavyJob()
+        heavyJob() // call it twice to ensure stream actually runs.
+        
+        task.cancel()
+        try! await Task.sleep(for: .seconds(10)) //ensures stream is completed, even when task cancelation is faulty.
+        
+        try #require(counter.load(ordering: .acquiring) > 0, "The stream should have been executed for at least one time, please adjust conditions before calling task.cancel")
+        try #require(nextCounter.load(ordering: .acquiring) > 0 && nextCounter.load(ordering: .acquiring) < 10, "Please adjust time conditions according.")
         #expect(counter.load(ordering: .acquiring) < 50)
     }
     
