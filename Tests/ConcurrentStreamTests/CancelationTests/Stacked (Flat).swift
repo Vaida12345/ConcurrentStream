@@ -38,7 +38,7 @@ struct StackedCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     // stream is released at once, should be blocked before the first child task was even created.
@@ -87,7 +87,7 @@ struct StackedCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -126,7 +126,7 @@ struct StackedCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
         let _ = stream // ensure stream lives the entire duration.
     }
     
@@ -161,7 +161,7 @@ struct StackedCancellationTests {
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         try #require(nextCounter.load(ordering: .sequentiallyConsistent) <= currentNextCounter + 10)
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -207,7 +207,7 @@ struct StackedCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -236,7 +236,7 @@ struct StackedCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -263,7 +263,7 @@ struct StackedCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -288,7 +288,7 @@ struct StackedCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -321,7 +321,7 @@ struct StackedCancellationTests {
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         try #require(currentForEachCounter <= counter.load(ordering: .sequentiallyConsistent) + 10)
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)

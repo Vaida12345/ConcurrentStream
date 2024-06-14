@@ -38,7 +38,7 @@ struct CancelationTestsWithOperations {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     // stream is released at once, should be blocked before the first child task was even created.
@@ -87,7 +87,7 @@ struct CancelationTestsWithOperations {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     

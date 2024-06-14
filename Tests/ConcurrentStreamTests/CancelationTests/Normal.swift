@@ -39,7 +39,7 @@ struct NormalCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     // stream is released at once, should be blocked before the first child task was even created.
@@ -88,7 +88,7 @@ struct NormalCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -121,7 +121,7 @@ struct NormalCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
         let _ = stream // ensure stream lives the entire duration.
     }
     
@@ -161,7 +161,7 @@ struct NormalCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
         let _ = stream // ensure stream lives the entire duration.
     }
     
@@ -196,7 +196,7 @@ struct NormalCancellationTests {
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         try #require(nextCounter.load(ordering: .sequentiallyConsistent) <= currentNextCounter + 10)
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -212,7 +212,7 @@ struct NormalCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -242,7 +242,7 @@ struct NormalCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -269,7 +269,7 @@ struct NormalCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -294,7 +294,7 @@ struct NormalCancellationTests {
         
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -327,7 +327,7 @@ struct NormalCancellationTests {
         try! await Task.sleep(for: sleepDuration) //ensures stream is completed when task cancelation is faulty.
         
         try #require(currentForEachCounter <= counter.load(ordering: .sequentiallyConsistent) + 10)
-        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100)
+        #expect(counter.load(ordering: .sequentiallyConsistent) <= 100 - acceptableDistance)
     }
     
     @available(macOS 15.0, *)
@@ -364,14 +364,18 @@ struct NormalCancellationTests {
     
 }
 
-/// some real job that takes CPU.
+/// Some real job that takes CPU.
+///
+/// Must be sufficiently large to avoid the task being completed before it could be cancelled.
 internal func heavyJob() {
-    var coder = SHA512()
-    var id = UUID()
-    withUnsafeBytes(of: &id) { buffer in
-        coder.update(data: buffer)
+    for _ in 1...10 {
+        var coder = SHA512()
+        var id = UUID()
+        withUnsafeBytes(of: &id) { buffer in
+            coder.update(data: buffer)
+        }
+        let _ = coder.finalize()
     }
-    let _ = coder.finalize()
 }
 
 internal let sleepDuration = Duration(secondsComponent: 1, attosecondsComponent: 0)
