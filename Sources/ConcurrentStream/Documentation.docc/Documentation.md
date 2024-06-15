@@ -1,6 +1,6 @@
 # ``ConcurrentStream``
 
-The framework of ``ConcurrentStream/ConcurrentStream``.
+The framework of ``ConcurrentStream``.
 
 ## Overview
 
@@ -46,4 +46,4 @@ You can read more about the design of `ConcurrentStream` and comparison with `ta
 
 ### Concurrent Stream
 
-- ``ConcurrentStream/ConcurrentStream``
+- ``ConcurrentStream``

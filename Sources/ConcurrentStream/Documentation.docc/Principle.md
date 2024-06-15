@@ -126,7 +126,7 @@ The `ConcurrentStream` aims to achieve the same, while making it available outsi
 The `ConcurrentStream` aims to combine `DispatchQueue.perform` and `AsyncSequence`.
 
 - Creation of a stream dispatches the work and returns immediately.
-- ``ConcurrentStream/ConcurrentStream/next()`` would wait for the work to complete.
+- ``ConcurrentStream/next()`` would wait for the work to complete.
 - A stream can **never** be reused.
 
 
@@ -155,20 +155,20 @@ The sequence in which results are yielded upon invoking `next` corresponds to th
 
 As a `taskGroup` waits for all of its child tasks to complete before returning, the `taskGroup` used in the iterator is detached. Hence manual task cancelation is required.
 
-- Note: Due to the nature of concurrency, if the closure does not implement checking cancelation, the submitted tasks to ``ConcurrentStream/ConcurrentStream/map(_:)-4q8b6``-like streams cannot be cancelled until these closure finish.
+- Note: Due to the nature of concurrency, if the closure does not implement checking cancelation, the submitted tasks to ``ConcurrentStream/map(_:)-4q8b6``-like streams cannot be cancelled until these closure finish.
 
 The tasks can be cancelled in three ways.
 - Releasing reference to the `stream`. (Cancelation in `deinit`)
-- Automatically cancelled when the parent `Task` executing  ``ConcurrentStream/ConcurrentStream/next()`` is cancelled.
-- Calling ``ConcurrentStream/ConcurrentStream/cancel`` explicitly.
+- Automatically cancelled when the parent `Task` executing  ``ConcurrentStream/next()`` is cancelled.
+- Calling ``ConcurrentStream/cancel`` explicitly.
 
 The task is also cancelled automatically when:
-- An error is thrown in the closure (``ConcurrentStream/ConcurrentStream/map(_:)-4q8b6``-like).
+- An error is thrown in the closure (``ConcurrentStream/map(_:)-4q8b6``-like).
 - Child streams are cancelled. (Note: This only goes up, not down)
-- Task is cancelled during a bridge method, such as ``ConcurrentStream/ConcurrentStream/sequence``. With the exception of ``ConcurrentStream/ConcurrentStream/async``, which must be cancelled manually.
+- Task is cancelled during a bridge method, such as ``ConcurrentStream/sequence``. With the exception of ``ConcurrentStream/async``, which must be cancelled manually.
 
-After the task is cancelled, successive calls to ``ConcurrentStream/ConcurrentStream/next()`` depends on its origin. The stream itself does not store the state of whether it has been cancelled.
-- If it does not evolve ``ConcurrentStream/ConcurrentStream/map(_:)-4q8b6``-like: The method is unaffected, why would it be?
+After the task is cancelled, successive calls to ``ConcurrentStream/next()`` depends on its origin. The stream itself does not store the state of whether it has been cancelled.
+- If it does not evolve ``ConcurrentStream/map(_:)-4q8b6``-like: The method is unaffected, why would it be?
 - Otherwise this method would return anything left in the buffer, and `nil` in subsequence calls.
 
 
