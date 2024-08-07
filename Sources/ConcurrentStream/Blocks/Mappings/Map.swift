@@ -30,7 +30,6 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
     private var task: Task<Void, any Error>?
     
     
-    
     init(source: SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async throws(TransformFailure) -> Element) async {
         nonisolated(unsafe)
         let source = consume source
