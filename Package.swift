@@ -6,14 +6,15 @@ import PackageDescription
 let package = Package(
     name: "ConcurrentStream",
     platforms: [
-        .macOS(.v10_15),
-        .iOS(.v13),
-        .watchOS(.v6),
-        .tvOS(.v13)
+        .macOS(.v15),
+        .iOS(.v18),
+        .watchOS(.v11),
+        .tvOS(.v18),
+        .visionOS(.v2)
     ], products: [
         .library(name: "ConcurrentStream", targets: ["ConcurrentStream"]),
     ], targets: [
-        .target(name: "ConcurrentStream", swiftSettings: [.enableUpcomingFeature("FullTypedThrows"), .enableExperimentalFeature("NoncopyableGenerics")]),
+        .target(name: "ConcurrentStream"),
         .executableTarget(name: "Client", dependencies: ["ConcurrentStream"]),
         .testTarget(name: "ConcurrentStreamTests", dependencies: ["ConcurrentStream"]),
     ], swiftLanguageModes: [.v5]

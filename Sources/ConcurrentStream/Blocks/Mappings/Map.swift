@@ -6,6 +6,8 @@
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
+import Synchronization
+
 
 /// The primary associative values are: The returned element, The source stream, the error that this stream throws, the error that the work closure throws.
 fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure>: ConcurrentStream where SourceStream: ConcurrentStream, TransformFailure: Error, Failure: Error {
@@ -21,16 +23,16 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
     private var base: AsyncThrowingStream<Word, any Error>.Iterator?
     
     /// The buffer for retaining pending values.
-    private var _buffer: Dictionary<Int, Element> = [:]
+    private let _buffer = Mutex(Dictionary<Int, Element>())
     
     /// The index for the next element to produce in `next()`
-    private var index = 0
+    private let index = Mutex(0 as Int)
     
     /// The task containing the `TaskGroup`
     private var task: Task<Void, any Error>?
     
     
-    init(source: SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async throws(TransformFailure) -> Element) async {
+    init(source: SourceStream, work: @Sendable @escaping @isolated(any) (_: SourceStream.Element) async throws(TransformFailure) -> Element) async {
         nonisolated(unsafe)
         let source = consume source
         self.source = source
@@ -44,8 +46,6 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
                     var count = 0
                     while let value = try await source.next() {
                         let _count = count
-                        nonisolated(unsafe) // Nonisolated as I do not want to restrain `Element` to `Sendable` for now.
-                        let value = value
                         
                         await Task.yield()
                         
@@ -82,21 +82,35 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
     /// Access the next element in the stream. `wait`ing is built-in.
     public func next() async throws(Failure) -> Element? {
         do {
-            let index = index
-            while _buffer[index] == nil {
+            var currentIndexIsMissing: Bool {
+                self._buffer.withLock { _buffer in
+                    self.index.withLock { index in
+                        _buffer[index] == nil
+                    }
+                }
+            }
+            
+            while currentIndexIsMissing {
                 try Task.checkCancellation()
                 
                 guard let word = try await base?.next() else {
                     return nil
                 } // the only place where `nil` is returned, other than `CancellationError`.
                 
-                _buffer.updateValue(word.1, forKey: word.0)
+                self._buffer.withLock { _buffer in
+                    _ = _buffer.updateValue(word.1, forKey: word.0)
+                }
             }
             
-            let value = _buffer.removeValue(forKey: index)!
-            self.index += 1
+            defer {
+                self.index.withLock({ $0 += 1 })
+            }
             
-            return value
+            return self._buffer.withLock { _buffer in
+                self.index.withLock { index in
+                    _buffer.removeValue(forKey: index)
+                }
+            }
         } catch is CancellationError {
             self.cancel()
             return nil
@@ -148,6 +162,8 @@ extension ConcurrentStream {
     /// > - Use of `Dictionary` as buffer: ~50ns
     /// >
     /// > *Please also note that this benchmark could be inaccuracy due to the nature of concurrency.*
+    ///
+    /// - Note: With `Synchronization`, the `next` method can be safely evoked in any thread.
     ///
     /// ## Topics
     /// ### Variants

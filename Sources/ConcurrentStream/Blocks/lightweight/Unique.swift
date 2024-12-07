@@ -6,24 +6,24 @@
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
+import Synchronization
+
 
 fileprivate final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Hashable {
     
     /// The source stream
     private let source: SourceStream
     
-    private var set: Set<Int>
+    private let set = Mutex(Set<Element>())
     
     fileprivate init(source: consuming SourceStream) {
         self.source = source
-        self.set = []
     }
     
     func next() async throws(Failure) -> Element? {
         do {
             guard let next = try await source.next() else { return nil }
-            let hash = next.hashValue
-            if set.insert(hash).inserted {
+            if self.set.withLock({$0.insert(next).inserted }) {
                 return next
             }
             
