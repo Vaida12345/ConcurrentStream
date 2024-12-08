@@ -161,7 +161,7 @@ extension ConcurrentStream {
     /// >
     /// > - Use of `Dictionary` as buffer: ~50ns
     /// >
-    /// > *Please also note that this benchmark could be inaccuracy due to the nature of concurrency.*
+    /// > *Please also note that this benchmark could be inaccurate due to the nature of concurrency.*
     ///
     /// - Note: With `Synchronization`, the `next` method can be safely evoked in any thread.
     ///
