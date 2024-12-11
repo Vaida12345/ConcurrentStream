@@ -159,6 +159,8 @@ public protocol ConcurrentStream<Element, Failure>: AnyObject { // FIXME: ~Copya
     ///
     /// The elements will always be returned in the order they were submitted.
     ///
+    /// It is a programmer error to invoke `next()` from a concurrent context that contends with another such call, which results in a call to `fatalError()`. This is a constrain from `AsyncThrowingStream.Iterator`.
+    ///
     /// - Returns: The next element in the iterator, `nil` when reached the end.
     func next() async throws(Failure) -> Self.Element?
     
