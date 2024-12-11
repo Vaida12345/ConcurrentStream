@@ -118,6 +118,7 @@ extension ConcurrentStream {
             }
         } catch {
             self.cancel()
+            throw error
         }
     }
     
