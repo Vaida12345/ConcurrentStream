@@ -22,7 +22,7 @@ The `heavyWork`s are executed in parallel, while the completed ones are reported
 ```swift
 dependencies: [
     .package(name: "ConcurrentStream", 
-             path: "https://github.com/Vaida12345/ConcurrentStream")
+             path: "https://www.github.com/Vaida12345/ConcurrentStream")
 ]
 ```
 and then adding the appropriate module to your target dependencies.
@@ -31,7 +31,7 @@ and then adding the appropriate module to your target dependencies.
 
 You can add this framework as a dependency to your Xcode project by clicking File -> Swift Packages -> Add Package Dependency. The package is located at:
 ```
-https://github.com/Vaida12345/ConcurrentStream
+https://www.github.com/Vaida12345/ConcurrentStream
 ```
 
 
