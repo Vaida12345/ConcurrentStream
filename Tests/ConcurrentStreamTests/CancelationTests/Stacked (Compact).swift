@@ -332,7 +332,7 @@ struct CompactCancellationTests {
             counter.add(1, ordering: .sequentiallyConsistent)
         }.compactMap { Optional($0) }
         
-        try await stream.forEach { _, _ in
+        try? await stream.forEach { _, _ in
             forEachCounter.add(1, ordering: .sequentiallyConsistent)
             throw TestError.example // throw after forEach
         }

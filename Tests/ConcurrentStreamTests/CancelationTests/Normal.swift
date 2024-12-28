@@ -338,7 +338,7 @@ struct NormalCancellationTests {
             counter.add(1, ordering: .sequentiallyConsistent)
         }
         
-        try await stream.forEach { _, _ in
+        try? await stream.forEach { _, _ in
             forEachCounter.add(1, ordering: .sequentiallyConsistent)
             throw TestError.example // throw after forEach
         }
