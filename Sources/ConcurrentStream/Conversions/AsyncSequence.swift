@@ -43,7 +43,7 @@ extension AsyncSequence {
     /// - Returns: The iterator for the sequence is created before returning.
     ///
     /// - Complexity: O(*1*).
-    public consuming func stream(of Element: Self.Element.Type = Self.Element.self) throws -> some ConcurrentStream<Self.Element, any Error> {
+    public consuming func stream(of Element: Self.Element.Type = Self.Element.self) -> some ConcurrentStream<Self.Element, any Error> {
         ConcurrentAsyncSequenceStream(source: self, of: Self.Element.self)
     }
     
