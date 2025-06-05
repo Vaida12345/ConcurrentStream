@@ -83,41 +83,21 @@ extension ConcurrentStream {
     @inlinable
     public func forEach<E>(_ body: @escaping @Sendable (_ index: Int, _ element: Element) async throws(E) -> Void) async throws(any Error) where E: Error {
         do {
-            if #available(macOS 14, iOS 17, watchOS 10, tvOS 17, *) {
-                try await withThrowingDiscardingTaskGroup { group in
-                    var index = 0
-                    while let next = try await self.next() {
-                        let _index = index
-                        nonisolated(unsafe)
-                        let _next = consume next  // Nonisolated as I do not want to restrain `Element` to `Sendable` for now.
-                        
+            try await withThrowingDiscardingTaskGroup { group in
+                var index = 0
+                while let next = try await self.next() {
+                    let _index = index
+                    nonisolated(unsafe)
+                    let _next = consume next  // Nonisolated as I do not want to restrain `Element` to `Sendable` for now.
+                    
+                    await Task.yield()
+                    guard group.addTaskUnlessCancelled(priority: nil, operation: {
                         await Task.yield()
-                        guard group.addTaskUnlessCancelled(priority: nil, operation: {
-                            await Task.yield()
-                            try Task.checkCancellation()
-                            
-                            try await body(_index, _next)
-                        }) else { throw CancellationError() } // manually throw to catch.
-                        index &+= 1
-                    }
-                }
-            } else {
-                try await withThrowingTaskGroup(of: Void.self) { group in
-                    var index = 0
-                    while let next = try await self.next() {
-                        let _index = index
-                        nonisolated(unsafe)
-                        let _next = consume next  // FIXME: isolated?
+                        try Task.checkCancellation()
                         
-                        await Task.yield()
-                        guard group.addTaskUnlessCancelled(priority: nil, operation: {
-                            await Task.yield()
-                            try Task.checkCancellation()
-                            
-                            try await body(_index, _next)
-                        }) else { throw CancellationError() }
-                        index &+= 1
-                    }
+                        try await body(_index, _next)
+                    }) else { throw CancellationError() } // manually throw to catch.
+                    index &+= 1
                 }
             }
         } catch {

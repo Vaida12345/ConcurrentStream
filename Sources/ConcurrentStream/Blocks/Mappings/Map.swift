@@ -42,7 +42,7 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
         
         self.task = Task.detached { [_cancel = self.cancel] in
             do {
-                try await withThrowingTaskGroup(of: Void.self) { group in
+                try await withThrowingDiscardingTaskGroup { group in
                     var count = 0
                     while let value = try await source.next() {
                         let _count = count
@@ -64,10 +64,8 @@ fileprivate final class ConcurrentMapStream<Element, SourceStream, Failure, Tran
                         
                         count &+= 1
                     }
-                    
-                    try await group.waitForAll()
-                    continuation.finish()
                 }
+                continuation.finish()
             } catch {
                 continuation.finish(throwing: error)
                 _cancel() // finish before cancel, otherwise `_cancel` would call `continuation.finish` again.
