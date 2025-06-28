@@ -14,13 +14,17 @@ final class ConcurrentCompactedStream<Unwrapped, SourceStream>: ConcurrentStream
     @usableFromInline
     let source: SourceStream
     
+    @usableFromInline
+    let cancel: @Sendable () -> Void
+    
     @inlinable
-    init(source: consuming SourceStream) {
+    init(source: SourceStream) {
         self.source = source
+        self.cancel = source.cancel
     }
     
     @inlinable
-    func next() async throws(Failure) -> Element? {
+    func next() async throws(Failure) -> sending Element? {
         do {
             guard let next = try await source.next() else { return nil } // reaches end
             if let next {
@@ -32,13 +36,6 @@ final class ConcurrentCompactedStream<Unwrapped, SourceStream>: ConcurrentStream
         } catch {
             self.cancel()
             throw error
-        }
-    }
-    
-    @inlinable
-    nonisolated var cancel: @Sendable () -> Void {
-        { [_cancel = source.cancel] in
-            _cancel()
         }
     }
     
@@ -62,7 +59,7 @@ extension ConcurrentStream {
     /// - Tip: `map(_:).compacted()` would perform the same as `compactMap(_:)`, with similar performance.
     @inlinable
     public consuming func compacted<Unwrapped>() -> some ConcurrentStream<Unwrapped, Failure> where Element == Unwrapped? {
-        ConcurrentCompactedStream(source: consume self)
+        ConcurrentCompactedStream(source: self)
     }
     
 }

@@ -17,16 +17,20 @@ final class ConcurrentFilterStream<SourceStream, Failure>: ConcurrentStream wher
     let source: SourceStream
     
     @usableFromInline
-    let isIncluded: (Element) async throws -> Bool
+    let cancel: @Sendable () -> Void
+    
+    @usableFromInline
+    let isIncluded: @Sendable (Element) async throws -> Bool
     
     @inlinable
-    init(source: consuming SourceStream, isIncluded: @escaping (Element) async throws -> Bool) {
+    init(source: SourceStream, isIncluded: @Sendable @escaping (Element) async throws -> Bool) {
         self.source = source
+        self.cancel = source.cancel
         self.isIncluded = isIncluded
     }
     
     @inlinable
-    func next() async throws(Failure) -> Element? {
+    func next() async throws(Failure) -> sending Element? {
         do {
             guard let next = try await source.next() else { return nil }
             if try await isIncluded(next) {
@@ -37,13 +41,6 @@ final class ConcurrentFilterStream<SourceStream, Failure>: ConcurrentStream wher
         } catch {
             self.cancel()
             throw error as! Failure
-        }
-    }
-    
-    @inlinable
-    nonisolated var cancel: @Sendable () -> Void {
-        { [_cancel = source.cancel] in
-            _cancel()
         }
     }
     
@@ -79,7 +76,7 @@ extension ConcurrentStream {
     /// - ``ConcurrentStream/filter(_:)-35xli``
     /// - ``ConcurrentStream/filter(_:)-2kl80``
     @inlinable
-    public consuming func filter(_ isIncluded: @escaping (Element) async throws -> Bool) -> some ConcurrentStream<Element, any Error> {
+    public consuming func filter(_ isIncluded: @Sendable @escaping (Element) async throws -> Bool) -> some ConcurrentStream<Element, any Error> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
     }
     
@@ -88,7 +85,7 @@ extension ConcurrentStream {
     ///
     /// This is a variant of ``ConcurrentStream/filter(_:)-5v6w8``
     @inlinable
-    public consuming func filter(_ isIncluded: @escaping (Element) async -> Bool) -> some ConcurrentStream<Element, Failure> {
+    public consuming func filter(_ isIncluded: @Sendable @escaping (Element) async -> Bool) -> some ConcurrentStream<Element, Failure> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
     }
     
@@ -103,7 +100,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/filter(_:)-5v6w8``
     @inlinable
-    public consuming func filter<E>(_ isIncluded: @escaping (Element) async throws(E) -> Bool) -> some ConcurrentStream<Element, E> {
+    public consuming func filter<E>(_ isIncluded: @Sendable @escaping (Element) async throws(E) -> Bool) -> some ConcurrentStream<Element, E> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
     }
     
@@ -112,7 +109,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/filter(_:)-5v6w8``
     @inlinable
-    public consuming func filter(_ isIncluded: @escaping (Element) async -> Bool) -> some ConcurrentStream<Element, Never> {
+    public consuming func filter(_ isIncluded: @Sendable @escaping (Element) async -> Bool) -> some ConcurrentStream<Element, Never> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
     }
     

@@ -8,7 +8,7 @@
 
 
 @usableFromInline
-final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Hashable {
+final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Hashable, SourceStream.Element: Sendable {
     
     /// The source stream
     @usableFromInline
@@ -23,7 +23,7 @@ final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream where SourceS
     }
     
     @inlinable
-    func next() async throws(Failure) -> Element? {
+    func next() async throws(Failure) -> sending Element? {
         do {
             guard let next = try await source.next() else { return nil }
             if await self.store.insert(next) {
@@ -83,7 +83,7 @@ extension ConcurrentStream {
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
     @inlinable
-    public consuming func unique() -> some ConcurrentStream<Element, Failure> where Element: Hashable {
+    public consuming func unique() -> some ConcurrentStream<Element, Failure> where Element: Hashable, Element: Sendable {
         ConcurrentUniqueStream(source: consume self)
     }
     

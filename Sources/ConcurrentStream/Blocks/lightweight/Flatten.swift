@@ -14,19 +14,23 @@ final class ConcurrentFlattenStream<SourceStream, Failure, ChildFailure>: Concur
     @usableFromInline
     let source: SourceStream
     
+    @usableFromInline
+    let cancel: @Sendable () -> Void
+    
     /// The current iterating child of `source`.
     @usableFromInline
-    var stream: SourceStream.Element? = nil
+    let store = Store()
     
     @inlinable
-    init(source: consuming SourceStream) {
+    init(source: SourceStream) {
         self.source = source
+        self.cancel = source.cancel
     }
     
     @inlinable
-    func next() async throws(Failure) -> Element? {
+    func next() async throws(Failure) -> sending Element? {
         do {
-            if let next = try await stream?.next() {
+            if let next = try await store.next() {
                 return next
             }
             
@@ -36,7 +40,7 @@ final class ConcurrentFlattenStream<SourceStream, Failure, ChildFailure>: Concur
                 return nil
             }
             
-            self.stream = nextStream
+            await self.store.replace(stream: nextStream)
             return try await self.next()
         } catch {
             self.cancel()
@@ -44,15 +48,26 @@ final class ConcurrentFlattenStream<SourceStream, Failure, ChildFailure>: Concur
         }
     }
     
-    @inlinable
-    nonisolated var cancel: @Sendable () -> Void {
-        { [_cancel = source.cancel] in
-            _cancel()
-        }
-    }
-    
     @usableFromInline
     typealias Element = SourceStream.Element.Element
+    
+    @usableFromInline
+    actor Store {
+        
+        @usableFromInline
+        var stream: SourceStream.Element? = nil
+        
+        @inlinable
+        func next() async throws -> sending Element? {
+            try await stream?.next()
+        }
+        
+        @inlinable
+        func replace(stream: SourceStream.Element) {
+            self.stream = stream
+        }
+        
+    }
     
 }
 

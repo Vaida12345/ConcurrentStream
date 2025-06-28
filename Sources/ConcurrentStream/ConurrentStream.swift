@@ -153,7 +153,7 @@
 /// Note that there is no way to retrieve the excluded elements. These operation themselves are lightweight.
 ///
 /// - ``filter(_:)-5v6w8``
-public protocol ConcurrentStream<Element, Failure>: AnyObject {
+public protocol ConcurrentStream<Element, Failure>: Sendable {
     
     /// Returns the next element in the iterator.
     ///
@@ -162,7 +162,7 @@ public protocol ConcurrentStream<Element, Failure>: AnyObject {
     /// It is a programmer error to invoke `next()` from a concurrent context that contends with another such call, which results in a call to `fatalError()`. This is a constrain from `AsyncThrowingStream.Iterator`.
     ///
     /// - Returns: The next element in the iterator, `nil` when reached the end.
-    func next() async throws(Failure) -> Self.Element?
+    func next() async throws(Failure) -> sending Self.Element?
     
     /// Cancels the stream, and its upstreams.
     ///
@@ -224,7 +224,7 @@ public protocol ConcurrentStream<Element, Failure>: AnyObject {
     nonisolated var cancel: @Sendable () -> Void { get }
     
     /// The type of element produced by this stream.
-    associatedtype Element: Sendable
+    associatedtype Element
     
     /// The type of error produced by this stream.
     associatedtype Failure: Error

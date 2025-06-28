@@ -10,8 +10,7 @@
 /// An `AsyncSequence` bridged from ``ConcurrentStream``.
 ///
 /// You can use ``cancel`` to cancel the underlying `stream`. For more information, see ``cancel``.
-@available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *)
-public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence where SourceStream: ConcurrentStream {
+public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence, Sendable where SourceStream: ConcurrentStream {
     
     @usableFromInline
     let source: SourceStream
@@ -93,7 +92,6 @@ extension ConcurrentStream {
     /// ## Topics
     /// ### The Structure
     /// - ``AsyncConcurrentStreamSequence``
-    @available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *)
     @inlinable
     public var async: AsyncConcurrentStreamSequence<Self> {
         consuming get {

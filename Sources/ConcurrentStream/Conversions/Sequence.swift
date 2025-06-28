@@ -8,7 +8,7 @@
 
 
 @usableFromInline
-final class ConcurrentSequenceStream<Source>: ConcurrentStream where Source: Sequence {
+actor ConcurrentSequenceStream<Source>: ConcurrentStream where Source: Sequence, Source.Element: Sendable {
     
     @usableFromInline
     var iterator: Source.Iterator
@@ -19,7 +19,7 @@ final class ConcurrentSequenceStream<Source>: ConcurrentStream where Source: Seq
     }
     
     @inlinable
-    func next() -> Element? {
+    func next() -> sending Element? {
         iterator.next()
     }
     
@@ -38,7 +38,7 @@ final class ConcurrentSequenceStream<Source>: ConcurrentStream where Source: Seq
 }
 
 
-extension Sequence {
+extension Sequence where Element: Sendable, Self: Sendable {
     
     /// Creates a stream from a `Sequence`.
     ///

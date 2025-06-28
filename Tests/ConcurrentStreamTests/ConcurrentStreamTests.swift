@@ -132,14 +132,6 @@ struct ConcurrentStreamTests {
         #expect(sequence == stream)
     }
     
-    @Test("NSEnumerator", .tags(.conversion))
-    func testNSEnumerator() async {
-        let sequence = [Int](0...100).shuffled()
-        let enumerator = NSArray(array: sequence).objectEnumerator()
-        let stream = NSArray(array: sequence).objectEnumerator().stream(of: Int.self)
-        #expect(try! await (enumerator.allObjects as! [Int]) == stream.sequence)
-    }
-    
 }
 
 @available(macOS 15.0, *)

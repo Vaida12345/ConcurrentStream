@@ -6,16 +6,16 @@ import PackageDescription
 let package = Package(
     name: "ConcurrentStream",
     platforms: [
-        .macOS(.v14),
-        .iOS(.v17),
-        .watchOS(.v10),
-        .tvOS(.v17),
-        .visionOS(.v1)
+        .macOS(.v15),
+        .iOS(.v18),
+        .watchOS(.v11),
+        .tvOS(.v18),
+        .visionOS(.v2)
     ], products: [
         .library(name: "ConcurrentStream", targets: ["ConcurrentStream"]),
     ], targets: [
         .target(name: "ConcurrentStream"),
         .executableTarget(name: "Client", dependencies: ["ConcurrentStream"]),
         .testTarget(name: "ConcurrentStreamTests", dependencies: ["ConcurrentStream"]),
-    ], swiftLanguageModes: [.v5]
+    ]
 )

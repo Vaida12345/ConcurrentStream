@@ -20,23 +20,20 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
     let continuation: AsyncThrowingStream<Word, any Error>.Continuation
     
     
-    /// The iterator of `taskGroup`
     @usableFromInline
-    var base: AsyncThrowingStream<Word, any Error>.Iterator?
-    
-    @usableFromInline
-    let store = Store()
+    let store: Store
     
     /// The task containing the `TaskGroup`
     @usableFromInline
+    nonisolated(unsafe) // Isolated as it needs to be an optional and mutated in the initialization process.
     var task: Task<Void, any Error>?
     
     
     @inlinable
-    init(source: consuming sending SourceStream, work: @Sendable @escaping @isolated(any) (_: SourceStream.Element) async throws(TransformFailure) -> Element) async {
+    init(source: consuming sending SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async throws(TransformFailure) -> Element) async {
         self.parentCancelable = source.cancel
         let (_stream, continuation) = AsyncThrowingStream.makeStream(of: Word.self)
-        self.base = _stream.makeAsyncIterator()
+        self.store = Store(base: _stream.makeAsyncIterator())
         self.continuation = continuation
         
         self.task = Task.detached { [_cancel = self.cancel] in
@@ -79,12 +76,12 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
     
     /// Access the next element in the stream. `wait`ing is built-in.
     @inlinable
-    func next() async throws(Failure) -> Element? {
+    func next() async throws(Failure) -> sending Element? {
         do {
             while await store.currentIndexIsMissing {
                 try Task.checkCancellation()
                 
-                guard let word = try await base?.next() else {
+                guard let word = try await store.next() else {
                     return nil
                 } // the only place where `nil` is returned, other than `CancellationError`.
                 
@@ -120,6 +117,10 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
     @usableFromInline
     actor Store {
         
+        /// The iterator of `taskGroup`
+        @usableFromInline
+        var iterator: AsyncThrowingStream<Word, any Error>.Iterator?
+        
         /// The buffer for retaining pending values.
         @usableFromInline
         var buffer: [Int : Element] = [:]
@@ -127,6 +128,11 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
         /// The index for the next element to produce in `next()`
         @usableFromInline
         var index = 0
+        
+        @inlinable
+        init(base: AsyncThrowingStream<Word, any Error>.Iterator?) {
+            self.iterator = base
+        }
         
         @inlinable
         var currentIndexIsMissing: Bool {
@@ -139,13 +145,21 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
         }
         
         @inlinable
-        func removeValue() -> Element? {
+        func removeValue() -> sending Element? {
             self.buffer.removeValue(forKey: self.index)
         }
         
         @inlinable
         func increment() {
             self.index += 1
+        }
+        
+        @inlinable
+        func next() async throws -> sending Word? {
+            var iterator = self.iterator
+            let next = try await iterator?.next(isolation: self)
+            self.iterator = iterator
+            return next
         }
         
     }

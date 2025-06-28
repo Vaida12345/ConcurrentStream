@@ -8,25 +8,28 @@
 
 
 @usableFromInline
-final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Sequence {
+final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Sequence, SourceStream.Element.Element: Sendable {
     
     /// The source stream
     @usableFromInline
     let source: SourceStream
     
-    /// The current iterating child of `source`.
     @usableFromInline
-    var stream: SourceStream.Element.Iterator? = nil
+    let cancel: @Sendable () -> Void
+    
+    @usableFromInline
+    let store = Store()
     
     @inlinable
-    init(source: consuming SourceStream) {
+    init(source: SourceStream) {
         self.source = source
+        self.cancel = source.cancel
     }
     
     @inlinable
-    func next() async throws(Failure) -> Element? {
+    func next() async throws(Failure) -> sending Element? {
         do {
-            if let next = stream?.next() {
+            if let next = await self.store.next() {
                 return next
             }
             
@@ -36,18 +39,11 @@ final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream wher
                 return nil
             }
             
-            self.stream = nextStream.makeIterator()
+            await self.store.replace(stream: nextStream)
             return try await self.next()
         } catch {
             self.cancel()
             throw error
-        }
-    }
-    
-    @inlinable
-    nonisolated var cancel: @Sendable () -> Void {
-        { [_cancel = source.cancel] in
-            _cancel()
         }
     }
     
@@ -56,6 +52,25 @@ final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream wher
     
     @usableFromInline
     typealias Failure = SourceStream.Failure
+    
+    @usableFromInline
+    actor Store {
+        
+        /// The current iterating child of `source`.
+        @usableFromInline
+        var stream: SourceStream.Element.Iterator? = nil
+        
+        @inlinable
+        func next() -> Element? {
+            self.stream?.next()
+        }
+        
+        @inlinable
+        func replace(stream: SourceStream.Element) {
+            self.stream = stream.makeIterator()
+        }
+        
+    }
     
 }
 
@@ -68,7 +83,7 @@ extension ConcurrentStream {
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
     @inlinable
-    public consuming func flatten<T>() -> some ConcurrentStream<T, Failure> where Element: Sequence<T> {
+    public consuming func flatten<T: Sendable>() -> some ConcurrentStream<T, Failure> where Element: Sequence<T> {
         ConcurrentSequenceFlattenStream(source: consume self)
     }
     

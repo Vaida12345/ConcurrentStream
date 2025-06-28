@@ -202,7 +202,7 @@ struct ConcurrentStreamThrowingTests {
 #endif
 
 
-private extension ConcurrentStream {
+private extension ConcurrentStream where Element: Sendable {
     
     func throwing() async -> some ConcurrentStream<Element, any Error> {
         await self.map { _ in

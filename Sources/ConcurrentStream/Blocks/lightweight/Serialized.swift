@@ -17,7 +17,7 @@ final class ConcurrentSerializedStream<LHS, RHS, Failure>: ConcurrentStream wher
     let rhs: RHS
     
     @inlinable
-    func next() async throws(Failure) -> Element? {
+    func next() async throws(Failure) -> sending Element? {
         do {
             if let lhs = try await lhs.next() { return lhs }
             return try await rhs.next()
