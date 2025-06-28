@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.1
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,11 +6,11 @@ import PackageDescription
 let package = Package(
     name: "ConcurrentStream",
     platforms: [
-        .macOS(.v15),
-        .iOS(.v18),
-        .watchOS(.v11),
-        .tvOS(.v18),
-        .visionOS(.v2)
+        .macOS(.v14),
+        .iOS(.v17),
+        .watchOS(.v10),
+        .tvOS(.v17),
+        .visionOS(.v1)
     ], products: [
         .library(name: "ConcurrentStream", targets: ["ConcurrentStream"]),
     ], targets: [

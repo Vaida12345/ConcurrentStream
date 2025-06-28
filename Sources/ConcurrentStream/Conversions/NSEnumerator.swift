@@ -6,29 +6,32 @@
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
-
 import Foundation
 
 
-private final class ConcurrentNSEnumeratorStream<Element>: ConcurrentStream {
+@usableFromInline
+final class ConcurrentNSEnumeratorStream<Element>: ConcurrentStream {
     
-    private var iterator: NSEnumerator
+    @usableFromInline
+    var iterator: NSEnumerator
     
-    
-    fileprivate func next() async -> Element? {
+    @inlinable
+    func next() async -> Element? {
         self.iterator.nextObject() as? Element
     }
     
+    @inlinable
     nonisolated var cancel: @Sendable () -> Void {
         // do nothing
         return {}
     }
     
-    
-    fileprivate init(iterator: consuming NSEnumerator) {
+    @inlinable
+    init(iterator: consuming NSEnumerator) {
         self.iterator = iterator
     }
     
+    @usableFromInline
     typealias Failure = Never
     
 }
@@ -41,6 +44,7 @@ extension NSEnumerator {
     /// - Important: This function would consume and deplete the enumerator.
     ///
     /// - Complexity: O(*1*).
+    @inlinable
     public consuming func stream<Element>(of type: Element.Type) -> some ConcurrentStream<Element, Never> {
         ConcurrentNSEnumeratorStream(iterator: self)
     }

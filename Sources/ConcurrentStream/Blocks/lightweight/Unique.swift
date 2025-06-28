@@ -6,24 +6,27 @@
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
-import Synchronization
 
-
-fileprivate final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Hashable {
+@usableFromInline
+final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Hashable {
     
     /// The source stream
-    private let source: SourceStream
+    @usableFromInline
+    let source: SourceStream
     
-    private let set = Mutex(Set<Element>())
+    @usableFromInline
+    let store = Store()
     
-    fileprivate init(source: consuming SourceStream) {
+    @inlinable
+    init(source: consuming SourceStream) {
         self.source = source
     }
     
+    @inlinable
     func next() async throws(Failure) -> Element? {
         do {
             guard let next = try await source.next() else { return nil }
-            if self.set.withLock({$0.insert(next).inserted }) {
+            if await self.store.insert(next) {
                 return next
             }
             
@@ -34,15 +37,32 @@ fileprivate final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream w
         }
     }
     
+    @inlinable
     nonisolated var cancel: @Sendable () -> Void {
         { [_cancel = source.cancel] in
             _cancel()
         }
     }
     
+    @usableFromInline
     typealias Element = SourceStream.Element
     
+    @usableFromInline
     typealias Failure = SourceStream.Failure
+    
+    
+    @usableFromInline
+    actor Store {
+        
+        @usableFromInline
+        var set: Set<Element> = []
+        
+        @inlinable
+        func insert(_ element: Element) -> Bool {
+            self.set.insert(element).inserted
+        }
+        
+    }
     
 }
 
@@ -62,6 +82,7 @@ extension ConcurrentStream {
     /// - Returns: The array without repeated elements.
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
+    @inlinable
     public consuming func unique() -> some ConcurrentStream<Element, Failure> where Element: Hashable {
         ConcurrentUniqueStream(source: consume self)
     }

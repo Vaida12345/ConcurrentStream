@@ -36,8 +36,8 @@ extension ConcurrentStream {
     /// - ``ConcurrentStream/compactMap(_:)-5qsj5``
     /// - ``ConcurrentStream/compactMap(_:)-31ec8``
     /// - ``ConcurrentStream/compactMap(_:)-8w06h``
-    @inline(__always)
-    public consuming func compactMap<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> Optional<T>) async -> some ConcurrentStream<T, any Error> {
+    @inlinable
+    public consuming func compactMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async throws -> Optional<T>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).compacted()
     }
     
@@ -45,8 +45,8 @@ extension ConcurrentStream {
     /// Creates a concurrent stream that compact maps the given closure over the stream’s elements.
     ///
     /// This is a variant of ``ConcurrentStream/compactMap(_:)-8yxjm``
-    @inline(__always)
-    public consuming func compactMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> Optional<T>) async -> some ConcurrentStream<T, Failure> {
+    @inlinable
+    public consuming func compactMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async -> Optional<T>) async -> some ConcurrentStream<T, Failure> {
         await self.map(transform).compacted()
     }
     
@@ -59,8 +59,8 @@ extension ConcurrentStream where Failure == Never {
     /// Creates a concurrent stream that compact maps the given closure over the stream’s elements.
     ///
     /// This is a variant of ``ConcurrentStream/compactMap(_:)-8yxjm``
-    @inline(__always)
-    public consuming func compactMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> Optional<T>) async -> some ConcurrentStream<T, E> where E: Error {
+    @inlinable
+    public consuming func compactMap<T: Sendable, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> Optional<T>) async -> some ConcurrentStream<T, E> where E: Error {
         await self.map(transform).compacted()
     }
     
@@ -68,8 +68,8 @@ extension ConcurrentStream where Failure == Never {
     /// Creates a concurrent stream that compact maps the given closure over the stream’s elements.
     ///
     /// This is a variant of ``ConcurrentStream/compactMap(_:)-8yxjm``
-    @inline(__always)
-    public consuming func compactMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async -> Optional<T>) async -> some ConcurrentStream<T, Never> {
+    @inlinable
+    public consuming func compactMap<T: Sendable, E>(_ transform: @Sendable @escaping (Self.Element) async -> Optional<T>) async -> some ConcurrentStream<T, Never> {
         await self.map(transform).compacted()
     }
     

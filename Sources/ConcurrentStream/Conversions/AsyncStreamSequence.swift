@@ -10,19 +10,22 @@
 /// An `AsyncSequence` bridged from ``ConcurrentStream``.
 ///
 /// You can use ``cancel`` to cancel the underlying `stream`. For more information, see ``cancel``.
-@available(macOS 15, *)
+@available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *)
 public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence where SourceStream: ConcurrentStream {
     
-    private let source: SourceStream
+    @usableFromInline
+    let source: SourceStream
     
     /// Creates the iterator.
     ///
-    /// - Warning: Similar to `taskGroup`, you should only call this function once, either explicitly or implicitly..
+    /// - Warning: Similar to `taskGroup`, you should only call this function once, either explicitly or implicitly.
+    @inlinable
     public consuming func makeAsyncIterator() -> AsyncIterator {
         AsyncIterator(source: source)
     }
     
-    fileprivate init(source: consuming SourceStream) {
+    @inlinable
+    public init(source: consuming SourceStream) {
         self.source = source
     }
     
@@ -34,6 +37,7 @@ public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence wh
     /// - Calling this method explicitly.
     ///
     /// If the this sequence is once again transform into another `AsyncSequence`. You could only rely on the error thrown on task cancelation. After the error is thrown, the contents in the closure is released, calling cancellation in `deinit`.
+    @inlinable
     public nonisolated var cancel: @Sendable () -> Void {
         { [_cancel = source.cancel] in
             _cancel()
@@ -43,12 +47,15 @@ public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence wh
     
     public final class AsyncIterator: AsyncIteratorProtocol {
         
-        private let source: SourceStream
+        @usableFromInline
+        let source: SourceStream
         
-        fileprivate init(source: consuming SourceStream) {
+        @inlinable
+        init(source: consuming SourceStream) {
             self.source = source
         }
         
+        @inlinable
         public func next() async throws(SourceStream.Failure) -> Element? {
             do {
                 return try await source.next()
@@ -86,7 +93,8 @@ extension ConcurrentStream {
     /// ## Topics
     /// ### The Structure
     /// - ``AsyncConcurrentStreamSequence``
-    @available(macOS 15, *)
+    @available(macOS 15, iOS 18, tvOS 18, watchOS 11, visionOS 2, *)
+    @inlinable
     public var async: AsyncConcurrentStreamSequence<Self> {
         consuming get {
             AsyncConcurrentStreamSequence(source: consume self)

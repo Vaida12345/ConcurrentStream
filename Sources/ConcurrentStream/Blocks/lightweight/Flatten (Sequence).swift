@@ -7,18 +7,23 @@
 //
 
 
-fileprivate final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Sequence {
+@usableFromInline
+final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Sequence {
     
     /// The source stream
-    private let source: SourceStream
+    @usableFromInline
+    let source: SourceStream
     
     /// The current iterating child of `source`.
-    private var stream: SourceStream.Element.Iterator? = nil
+    @usableFromInline
+    var stream: SourceStream.Element.Iterator? = nil
     
-    fileprivate init(source: consuming SourceStream) {
+    @inlinable
+    init(source: consuming SourceStream) {
         self.source = source
     }
     
+    @inlinable
     func next() async throws(Failure) -> Element? {
         do {
             if let next = stream?.next() {
@@ -39,14 +44,17 @@ fileprivate final class ConcurrentSequenceFlattenStream<SourceStream>: Concurren
         }
     }
     
+    @inlinable
     nonisolated var cancel: @Sendable () -> Void {
         { [_cancel = source.cancel] in
             _cancel()
         }
     }
     
+    @usableFromInline
     typealias Element = SourceStream.Element.Element
     
+    @usableFromInline
     typealias Failure = SourceStream.Failure
     
 }
@@ -59,6 +67,7 @@ extension ConcurrentStream {
     /// The overhead of this method is kept minimum. It would perform the same as `Sequence.flatten()`.
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
+    @inlinable
     public consuming func flatten<T>() -> some ConcurrentStream<T, Failure> where Element: Sequence<T> {
         ConcurrentSequenceFlattenStream(source: consume self)
     }

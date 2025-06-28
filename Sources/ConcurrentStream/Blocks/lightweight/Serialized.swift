@@ -7,13 +7,16 @@
 //
 
 
-private final class ConcurrentSerializedStream<LHS, RHS, Failure>: ConcurrentStream where LHS: ConcurrentStream, RHS: ConcurrentStream, LHS.Element == RHS.Element, Failure: Error {
+@usableFromInline
+final class ConcurrentSerializedStream<LHS, RHS, Failure>: ConcurrentStream where LHS: ConcurrentStream, RHS: ConcurrentStream, LHS.Element == RHS.Element, Failure: Error {
     
-    private let lhs: LHS
+    @usableFromInline
+    let lhs: LHS
     
-    private let rhs: RHS
+    @usableFromInline
+    let rhs: RHS
     
-    
+    @inlinable
     func next() async throws(Failure) -> Element? {
         do {
             if let lhs = try await lhs.next() { return lhs }
@@ -24,6 +27,7 @@ private final class ConcurrentSerializedStream<LHS, RHS, Failure>: ConcurrentStr
         }
     }
     
+    @inlinable
     nonisolated var cancel: @Sendable () -> Void {
         { [ _lhs = lhs.cancel, _rhs = rhs.cancel] in
             _lhs()
@@ -31,12 +35,13 @@ private final class ConcurrentSerializedStream<LHS, RHS, Failure>: ConcurrentStr
         }
     }
     
-    
-    fileprivate init(lhs: consuming LHS, rhs: consuming RHS) {
+    @inlinable
+    init(lhs: consuming LHS, rhs: consuming RHS) {
         self.lhs = lhs
         self.rhs = rhs
     }
     
+    @usableFromInline
     typealias Element = LHS.Element
     
 }
@@ -61,6 +66,7 @@ extension ConcurrentStream {
     /// - ``ConcurrentStream/+(_:_:)-25x9z``
     /// - ``ConcurrentStream/+(_:_:)-8aocz``
     /// - ``ConcurrentStream/+(_:_:)-4p98m``
+    @inlinable
     public static func + (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, some Error>) -> some ConcurrentStream<Element, any Error> {
         ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
     }
@@ -69,6 +75,7 @@ extension ConcurrentStream {
     /// Creates a new stream by concatenating the elements of two streams.
     ///
     /// This is a variant of ``ConcurrentStream/+(_:_:)-7m6k2``
+    @inlinable
     public static func + (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, Never>) -> some ConcurrentStream<Element, Failure> {
         ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
     }
@@ -82,6 +89,7 @@ extension ConcurrentStream where Failure == Never {
     /// Creates a new stream by concatenating the elements of two streams.
     ///
     /// This is a variant of ``ConcurrentStream/+(_:_:)-7m6k2``
+    @inlinable
     public static func +<E> (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, E>) -> some ConcurrentStream<Element, E> where E: Error {
         ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
     }
@@ -90,6 +98,7 @@ extension ConcurrentStream where Failure == Never {
     /// Creates a new stream by concatenating the elements of two streams.
     ///
     /// This is a variant of ``ConcurrentStream/+(_:_:)-7m6k2``
+    @inlinable
     public static func + (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, Never>) -> some ConcurrentStream<Element, Never> {
         ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
     }

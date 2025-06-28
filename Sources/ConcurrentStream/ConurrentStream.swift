@@ -153,7 +153,7 @@
 /// Note that there is no way to retrieve the excluded elements. These operation themselves are lightweight.
 ///
 /// - ``filter(_:)-5v6w8``
-public protocol ConcurrentStream<Element, Failure>: AnyObject { // FIXME: ~Copyable not yet implemented.
+public protocol ConcurrentStream<Element, Failure>: AnyObject {
     
     /// Returns the next element in the iterator.
     ///
@@ -224,7 +224,7 @@ public protocol ConcurrentStream<Element, Failure>: AnyObject { // FIXME: ~Copya
     nonisolated var cancel: @Sendable () -> Void { get }
     
     /// The type of element produced by this stream.
-    associatedtype Element
+    associatedtype Element: Sendable
     
     /// The type of error produced by this stream.
     associatedtype Failure: Error

@@ -87,15 +87,13 @@ extension ConcurrentStream {
                 var index = 0
                 while let next = try await self.next() {
                     let _index = index
-                    nonisolated(unsafe)
-                    let _next = consume next  // Nonisolated as I do not want to restrain `Element` to `Sendable` for now.
                     
                     await Task.yield()
                     guard group.addTaskUnlessCancelled(priority: nil, operation: {
                         await Task.yield()
                         try Task.checkCancellation()
                         
-                        try await body(_index, _next)
+                        try await body(_index, next)
                     }) else { throw CancellationError() } // manually throw to catch.
                     index &+= 1
                 }

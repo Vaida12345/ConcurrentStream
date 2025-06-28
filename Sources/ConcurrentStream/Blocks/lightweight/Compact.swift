@@ -7,15 +7,19 @@
 //
 
 
-fileprivate final class ConcurrentCompactedStream<Unwrapped, SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element == Optional<Unwrapped> {
+@usableFromInline
+final class ConcurrentCompactedStream<Unwrapped, SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element == Optional<Unwrapped> {
     
     /// The source stream
-    private let source: SourceStream
+    @usableFromInline
+    let source: SourceStream
     
-    fileprivate init(source: consuming SourceStream) {
+    @inlinable
+    init(source: consuming SourceStream) {
         self.source = source
     }
     
+    @inlinable
     func next() async throws(Failure) -> Element? {
         do {
             guard let next = try await source.next() else { return nil } // reaches end
@@ -31,14 +35,17 @@ fileprivate final class ConcurrentCompactedStream<Unwrapped, SourceStream>: Conc
         }
     }
     
+    @inlinable
     nonisolated var cancel: @Sendable () -> Void {
         { [_cancel = source.cancel] in
             _cancel()
         }
     }
     
+    @usableFromInline
     typealias Element = Unwrapped
     
+    @usableFromInline
     typealias Failure = SourceStream.Failure
     
 }
@@ -53,6 +60,7 @@ extension ConcurrentStream {
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
     ///
     /// - Tip: `map(_:).compacted()` would perform the same as `compactMap(_:)`, with similar performance.
+    @inlinable
     public consuming func compacted<Unwrapped>() -> some ConcurrentStream<Unwrapped, Failure> where Element == Unwrapped? {
         ConcurrentCompactedStream(source: consume self)
     }

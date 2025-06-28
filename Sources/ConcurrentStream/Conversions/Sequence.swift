@@ -7,25 +7,32 @@
 //
 
 
-private final class ConcurrentSequenceStream<Source>: ConcurrentStream where Source: Sequence {
+@usableFromInline
+final class ConcurrentSequenceStream<Source>: ConcurrentStream where Source: Sequence {
     
-    private var iterator: Source.Iterator
+    @usableFromInline
+    var iterator: Source.Iterator
     
-    fileprivate init(source: consuming Source) {
+    @inlinable
+    init(source: consuming Source) {
         self.iterator = source.makeIterator()
     }
     
-    fileprivate func next() -> Element? {
+    @inlinable
+    func next() -> Element? {
         iterator.next()
     }
     
+    @inlinable
     nonisolated var cancel: @Sendable () -> Void {
         // do nothing
         return {}
     }
     
-    fileprivate typealias Element = Source.Element
+    @usableFromInline
+    typealias Element = Source.Element
     
+    @usableFromInline
     typealias Failure = Never
     
 }
@@ -50,6 +57,7 @@ extension Sequence {
     /// ### See Also
     /// - ``_Concurrency/AsyncSequence/stream``
     /// - ``Foundation/NSEnumerator/stream(of:)``
+    @inlinable
     public var stream: some ConcurrentStream<Element, Never> {
         consuming get {
             ConcurrentSequenceStream(source: consume self)

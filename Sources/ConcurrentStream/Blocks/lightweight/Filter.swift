@@ -9,18 +9,23 @@
 import Foundation
 
 
-fileprivate final class ConcurrentFilterStream<SourceStream, Failure>: ConcurrentStream where SourceStream: ConcurrentStream, Failure: Error {
+@usableFromInline
+final class ConcurrentFilterStream<SourceStream, Failure>: ConcurrentStream where SourceStream: ConcurrentStream, Failure: Error {
     
     /// The source stream
-    private let source: SourceStream
+    @usableFromInline
+    let source: SourceStream
     
-    private let isIncluded: (Element) async throws -> Bool
+    @usableFromInline
+    let isIncluded: (Element) async throws -> Bool
     
-    fileprivate init(source: consuming SourceStream, isIncluded: @escaping (Element) async throws -> Bool) {
+    @inlinable
+    init(source: consuming SourceStream, isIncluded: @escaping (Element) async throws -> Bool) {
         self.source = source
         self.isIncluded = isIncluded
     }
     
+    @inlinable
     func next() async throws(Failure) -> Element? {
         do {
             guard let next = try await source.next() else { return nil }
@@ -35,12 +40,14 @@ fileprivate final class ConcurrentFilterStream<SourceStream, Failure>: Concurren
         }
     }
     
+    @inlinable
     nonisolated var cancel: @Sendable () -> Void {
         { [_cancel = source.cancel] in
             _cancel()
         }
     }
     
+    @usableFromInline
     typealias Element = SourceStream.Element
     
 }
@@ -71,6 +78,7 @@ extension ConcurrentStream {
     /// - ``ConcurrentStream/filter(_:)-16976``
     /// - ``ConcurrentStream/filter(_:)-35xli``
     /// - ``ConcurrentStream/filter(_:)-2kl80``
+    @inlinable
     public consuming func filter(_ isIncluded: @escaping (Element) async throws -> Bool) -> some ConcurrentStream<Element, any Error> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
     }
@@ -79,6 +87,7 @@ extension ConcurrentStream {
     /// Returns an stream containing, in order, the elements of the stream that satisfy the given predicate.
     ///
     /// This is a variant of ``ConcurrentStream/filter(_:)-5v6w8``
+    @inlinable
     public consuming func filter(_ isIncluded: @escaping (Element) async -> Bool) -> some ConcurrentStream<Element, Failure> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
     }
@@ -93,6 +102,7 @@ extension ConcurrentStream where Failure == Never {
     /// Returns an stream containing, in order, the elements of the stream that satisfy the given predicate.
     ///
     /// This is a variant of ``ConcurrentStream/filter(_:)-5v6w8``
+    @inlinable
     public consuming func filter<E>(_ isIncluded: @escaping (Element) async throws(E) -> Bool) -> some ConcurrentStream<Element, E> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
     }
@@ -101,6 +111,7 @@ extension ConcurrentStream where Failure == Never {
     /// Returns an stream containing, in order, the elements of the stream that satisfy the given predicate.
     ///
     /// This is a variant of ``ConcurrentStream/filter(_:)-5v6w8``
+    @inlinable
     public consuming func filter(_ isIncluded: @escaping (Element) async -> Bool) -> some ConcurrentStream<Element, Never> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
     }

@@ -7,18 +7,23 @@
 //
 
 
-fileprivate final class ConcurrentFlattenStream<SourceStream, Failure, ChildFailure>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: ConcurrentStream, Failure: Error, ChildFailure: Error, SourceStream.Element.Failure == ChildFailure {
+@usableFromInline
+final class ConcurrentFlattenStream<SourceStream, Failure, ChildFailure>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: ConcurrentStream, Failure: Error, ChildFailure: Error, SourceStream.Element.Failure == ChildFailure {
     
     /// The source stream
-    private let source: SourceStream
+    @usableFromInline
+    let source: SourceStream
     
     /// The current iterating child of `source`.
-    private var stream: SourceStream.Element? = nil
+    @usableFromInline
+    var stream: SourceStream.Element? = nil
     
-    fileprivate init(source: consuming SourceStream) {
+    @inlinable
+    init(source: consuming SourceStream) {
         self.source = source
     }
     
+    @inlinable
     func next() async throws(Failure) -> Element? {
         do {
             if let next = try await stream?.next() {
@@ -39,12 +44,14 @@ fileprivate final class ConcurrentFlattenStream<SourceStream, Failure, ChildFail
         }
     }
     
+    @inlinable
     nonisolated var cancel: @Sendable () -> Void {
         { [_cancel = source.cancel] in
             _cancel()
         }
     }
     
+    @usableFromInline
     typealias Element = SourceStream.Element.Element
     
 }
@@ -69,6 +76,7 @@ extension ConcurrentStream {
     /// ### Sequence Variant
     /// The following is used to ensure the capability with `Sequence`
     /// - ``ConcurrentStream/flatten()-6zgjd``
+    @inlinable
     public consuming func flatten<T, E>() -> some ConcurrentStream<T, any Error> where Element: ConcurrentStream<T, E>, E: Error {
         ConcurrentFlattenStream<Self, any Error, E>(source: consume self)
     }
@@ -77,6 +85,7 @@ extension ConcurrentStream {
     /// Returns a flat mapped stream.
     ///
     /// This is a variant of ``ConcurrentStream/flatten()-3mp1s``
+    @inlinable
     public consuming func flatten<T>() -> some ConcurrentStream<T, Failure> where Element: ConcurrentStream<T, Never> {
         ConcurrentFlattenStream<Self, Failure, Never>(source: consume self)
     }
@@ -90,6 +99,7 @@ extension ConcurrentStream where Failure == Never {
     /// Returns a flat mapped stream.
     ///
     /// This is a variant of ``ConcurrentStream/flatten()-3mp1s``
+    @inlinable
     public consuming func flatten<T, E>() -> some ConcurrentStream<T, E> where Element: ConcurrentStream<T, E>, E: Error {
         ConcurrentFlattenStream<Self, E, E>(source: consume self)
     }
@@ -98,6 +108,7 @@ extension ConcurrentStream where Failure == Never {
     /// Returns a flat mapped stream.
     ///
     /// This is a variant of ``ConcurrentStream/flatten()-3mp1s``
+    @inlinable
     public consuming func flatten<T>() -> some ConcurrentStream<T, Never> where Element: ConcurrentStream<T, Never> {
         ConcurrentFlattenStream<Self, Never, Never>(source: consume self)
     }
