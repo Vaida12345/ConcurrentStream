@@ -7,7 +7,7 @@ import Synchronization
 #if canImport(Testing)
 import Testing
 
-@Suite("Stacked Cancelation (Compact)", .tags(.cancelation, .mapping))
+@Suite("Stacked Cancelation (Compact)", .tags(.cancelation, .mapping), .serialized)
 struct CompactCancellationTests {
     
     // The stream is deallocated when the task is cancelled, hence the life time of the closure ended, calling cancelation in deinit.

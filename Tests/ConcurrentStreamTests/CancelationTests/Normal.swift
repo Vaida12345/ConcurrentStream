@@ -8,7 +8,7 @@ import Synchronization
 import Testing
 
 /// The new tests are forgiving on the test results, the counter could be off by over 50. However, the test results should be accurate, as enough sleep time was given.
-@Suite("Normal Cancelation Tests", .tags(.cancelation))
+@Suite("Normal Cancelation Tests", .tags(.cancelation), .serialized)
 struct NormalCancellationTests {
     
     // The stream is deallocated when the task is cancelled, hence the life time of the closure ended, calling cancelation in deinit.
