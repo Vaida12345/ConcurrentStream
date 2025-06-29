@@ -37,7 +37,7 @@ extension ConcurrentStream {
     /// - ``ConcurrentStream/compactMap(_:)-31ec8``
     /// - ``ConcurrentStream/compactMap(_:)-8w06h``
     @inlinable
-    public consuming func compactMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async throws -> Optional<T>) async -> some ConcurrentStream<T, any Error> {
+    public consuming func compactMap<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> sending Optional<T>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).compacted()
     }
     
@@ -46,7 +46,7 @@ extension ConcurrentStream {
     ///
     /// This is a variant of ``ConcurrentStream/compactMap(_:)-8yxjm``
     @inlinable
-    public consuming func compactMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async -> Optional<T>) async -> some ConcurrentStream<T, Failure> {
+    public consuming func compactMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending Optional<T>) async -> some ConcurrentStream<T, Failure> {
         await self.map(transform).compacted()
     }
     
@@ -60,7 +60,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/compactMap(_:)-8yxjm``
     @inlinable
-    public consuming func compactMap<T: Sendable, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> Optional<T>) async -> some ConcurrentStream<T, E> where E: Error {
+    public consuming func compactMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending Optional<T>) async -> some ConcurrentStream<T, E> where E: Error {
         await self.map(transform).compacted()
     }
     
@@ -69,7 +69,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/compactMap(_:)-8yxjm``
     @inlinable
-    public consuming func compactMap<T: Sendable, E>(_ transform: @Sendable @escaping (Self.Element) async -> Optional<T>) async -> some ConcurrentStream<T, Never> {
+    public consuming func compactMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async -> sending Optional<T>) async -> some ConcurrentStream<T, Never> {
         await self.map(transform).compacted()
     }
     

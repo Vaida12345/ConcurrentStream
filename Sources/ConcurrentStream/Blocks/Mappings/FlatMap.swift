@@ -51,7 +51,7 @@ extension ConcurrentStream {
     /// - ``ConcurrentStream/flatMap(_:)-j1vb``
     /// - ``ConcurrentStream/flatMap(_:)-7f9w5``
     @inlinable
-    public consuming func flatMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async throws -> some ConcurrentStream<T, any Error>) async -> some ConcurrentStream<T, any Error> {
+    public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> sending some ConcurrentStream<T, any Error>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).flatten()
     }
     
@@ -60,7 +60,7 @@ extension ConcurrentStream {
     ///
     /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
-    public consuming func flatMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async throws -> some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, any Error> {
+    public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> sending some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).flatten()
     }
     
@@ -69,7 +69,7 @@ extension ConcurrentStream {
     ///
     /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
-    public consuming func flatMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async -> some ConcurrentStream<T, some Error>) async -> some ConcurrentStream<T, any Error> {
+    public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending some ConcurrentStream<T, some Error>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).flatten()
     }
     
@@ -78,7 +78,7 @@ extension ConcurrentStream {
     ///
     /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
-    public consuming func flatMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async -> some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, Failure> {
+    public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, Failure> {
         await self.map(transform).flatten()
     }
     
@@ -92,7 +92,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
-    public consuming func flatMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async throws -> some ConcurrentStream<T, some Error>) async -> some ConcurrentStream<T, any Error> {
+    public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> sending some ConcurrentStream<T, some Error>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).flatten()
     }
     
@@ -101,7 +101,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
-    public consuming func flatMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, E> where T: Sendable, E: Error {
+    public consuming func flatMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, E> where E: Error {
         await self.map(transform).flatten()
     }
     
@@ -110,7 +110,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
-    public consuming func flatMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async -> some ConcurrentStream<T, E>) async -> some ConcurrentStream<T, E> where T: Sendable, E: Error {
+    public consuming func flatMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async -> sending some ConcurrentStream<T, E>) async -> some ConcurrentStream<T, E> where E: Error {
         await self.map(transform).flatten()
     }
     
@@ -119,7 +119,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
-    public consuming func flatMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async -> some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, Never> {
+    public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, Never> {
         await self.map(transform).flatten()
     }
     
@@ -135,7 +135,7 @@ extension ConcurrentStream {
     ///
     /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
-    public consuming func flatMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async throws -> some Sequence<T> & Sendable) async -> some ConcurrentStream<T, any Error> {
+    public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> sending some Sequence<T>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).flatten()
     }
     
@@ -144,7 +144,7 @@ extension ConcurrentStream {
     ///
     /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``'
     @inlinable
-    public consuming func flatMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async -> some Sequence<T> & Sendable) async -> some ConcurrentStream<T, Failure> {
+    public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending some Sequence<T>) async -> some ConcurrentStream<T, Failure> {
         await self.map(transform).flatten()
     }
     
@@ -158,7 +158,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
-    public consuming func flatMap<T: Sendable, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> some Sequence<T> & Sendable) async -> some ConcurrentStream<T, E> {
+    public consuming func flatMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending some Sequence<T>) async -> some ConcurrentStream<T, E> {
         await self.map(transform).flatten()
     }
     
@@ -167,7 +167,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
-    public consuming func flatMap<T: Sendable>(_ transform: @Sendable @escaping (Self.Element) async -> some Sequence<T> & Sendable) async -> some ConcurrentStream<T, Never> {
+    public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending some Sequence<T>) async -> some ConcurrentStream<T, Never> {
         await self.map(transform).flatten()
     }
     

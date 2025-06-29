@@ -9,7 +9,7 @@
 
 /// The primary associative values are: The returned element, The source stream, the error that this stream throws, the error that the work closure throws.
 @usableFromInline
-final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure>: ConcurrentStream where SourceStream: ConcurrentStream, TransformFailure: Error, Failure: Error, Element: Sendable {
+final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure>: ConcurrentStream where SourceStream: ConcurrentStream, TransformFailure: Error, Failure: Error {
     
     /// The source stream cancelable
     @usableFromInline
@@ -25,18 +25,17 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
     
     /// The task containing the `TaskGroup`
     @usableFromInline
-    nonisolated(unsafe) // Isolated as it needs to be an optional and mutated in the initialization process.
-    var task: Task<Void, any Error>?
+    let task: Task<Void, any Error>
     
     
     @inlinable
-    init(source: consuming sending SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async throws(TransformFailure) -> Element) async {
+    init(source: consuming sending SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async throws(TransformFailure) -> sending Element) async {
         self.parentCancelable = source.cancel
         let (_stream, continuation) = AsyncThrowingStream.makeStream(of: Word.self)
         self.store = Store(base: _stream.makeAsyncIterator())
         self.continuation = continuation
         
-        self.task = Task.detached { [_cancel = self.cancel] in
+        self.task = Task.detached { [parentCancelable = source.cancel] in
             do {
                 try await withThrowingDiscardingTaskGroup { group in
                     var count = 0
@@ -50,11 +49,11 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
                             try Task.checkCancellation()
                             
                             do {
-                                let next = try await (_count, work(value))
-                                continuation.yield(next)
+                                let result = try await work(value)
+                                continuation.yield((_count, result))
                             } catch {
                                 continuation.finish(throwing: error)
-                                _cancel() // finish before cancel, otherwise `_cancel` would call `continuation.finish` again.
+                                parentCancelable() // throwing will stop the task.
                             }
                         }) else { throw CancellationError() }
                         
@@ -64,7 +63,7 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
                 continuation.finish()
             } catch {
                 continuation.finish(throwing: error)
-                _cancel() // finish before cancel, otherwise `_cancel` would call `continuation.finish` again.
+                parentCancelable()
             }
         }
     }
@@ -81,11 +80,9 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
             while await store.currentIndexIsMissing {
                 try Task.checkCancellation()
                 
-                guard let word = try await store.next() else {
+                guard try await store.next() else {
                     return nil
                 } // the only place where `nil` is returned, other than `CancellationError`.
-                
-                await store.updateValue(word.1, forKey: word.0)
             }
             
             let removed = await self.store.removeValue()
@@ -103,8 +100,8 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
     
     @inlinable
     nonisolated var cancel: @Sendable () -> Void {
-        { [_taskCancel = self.task?.cancel, _cancel = parentCancelable, _finish = continuation.finish] in
-            _taskCancel?()
+        { [_taskCancel = self.task.cancel, _cancel = parentCancelable, _finish = continuation.finish] in
+            _taskCancel()
             _cancel()
             _finish(CancellationError())
         }
@@ -146,7 +143,8 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
         
         @inlinable
         func removeValue() -> sending Element? {
-            self.buffer.removeValue(forKey: self.index)
+            let removed = self.buffer.removeValue(forKey: self.index)
+            return removed.map(\.self) // workaround: shallow copy to trick compiler to think it is detached from memory. This is safe nevertheless, as `self` no longer has access to `removed`.
         }
         
         @inlinable
@@ -155,11 +153,17 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
         }
         
         @inlinable
-        func next() async throws -> sending Word? {
+        func next() async throws -> Bool {
             var iterator = self.iterator
             let next = try await iterator?.next(isolation: self)
             self.iterator = iterator
-            return next
+            
+            if let next {
+                self.updateValue(next.1, forKey: next.0)
+                return true
+            } else {
+                return false
+            }
         }
         
     }
@@ -206,7 +210,7 @@ extension ConcurrentStream {
     /// - ``ConcurrentStream/map(_:)-4rkgy``
     /// - ``ConcurrentStream/map(_:)-8qjns``
     @inlinable
-    public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> T) async -> some ConcurrentStream<T, any Error> where T: Sendable, E: Error {
+    public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending T) async -> some ConcurrentStream<T, any Error> where E: Error {
         await ConcurrentMapStream<T, Self, any Error, E>(source: self, work: transform) // self cannot be consumed
     }
     
@@ -215,7 +219,7 @@ extension ConcurrentStream {
     ///
     /// This is a variant of ``ConcurrentStream/map(_:)-4q8b6``
     @inlinable
-    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> T) async -> some ConcurrentStream<T, Failure> where T: Sendable {
+    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending T) async -> some ConcurrentStream<T, Failure> {
         await ConcurrentMapStream<T, Self, Failure, Never>(source: self, work: transform) // self cannot be consumed
     }
     
@@ -230,7 +234,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/map(_:)-4q8b6``
     @inlinable
-    public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> T) async -> some ConcurrentStream<T, E> where T: Sendable, E: Error {
+    public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending T) async -> some ConcurrentStream<T, E> where E: Error {
         await ConcurrentMapStream<T, Self, E, E>(source: self, work: transform)
     }
     
@@ -239,7 +243,7 @@ extension ConcurrentStream where Failure == Never {
     ///
     /// This is a variant of ``ConcurrentStream/map(_:)-4q8b6``
     @inlinable
-    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> T) async -> some ConcurrentStream<T, Never> where T: Sendable, Failure == Never {
+    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending T) async -> some ConcurrentStream<T, Never> where Failure == Never {
         await ConcurrentMapStream(source: self, work: transform) // self cannot be consumed
     }
     

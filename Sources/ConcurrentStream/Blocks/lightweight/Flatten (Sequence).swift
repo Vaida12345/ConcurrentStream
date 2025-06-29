@@ -8,7 +8,7 @@
 
 
 @usableFromInline
-final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Sequence, SourceStream.Element.Element: Sendable {
+final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream where SourceStream: ConcurrentStream, SourceStream.Element: Sequence {
     
     /// The source stream
     @usableFromInline
@@ -61,8 +61,9 @@ final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream wher
         var stream: SourceStream.Element.Iterator? = nil
         
         @inlinable
-        func next() -> Element? {
-            self.stream?.next()
+        func next() -> sending Element? {
+            let removed = self.stream?.next()
+            return removed.map(\.self) // workaround: shallow copy to trick compiler to think it is detached from memory. This is safe nevertheless, as `self` no longer has access to `removed`.
         }
         
         @inlinable
@@ -83,7 +84,7 @@ extension ConcurrentStream {
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
     @inlinable
-    public consuming func flatten<T: Sendable>() -> some ConcurrentStream<T, Failure> where Element: Sequence<T> {
+    public consuming func flatten<T>() -> some ConcurrentStream<T, Failure> where Element: Sequence<T> {
         ConcurrentSequenceFlattenStream(source: consume self)
     }
     
