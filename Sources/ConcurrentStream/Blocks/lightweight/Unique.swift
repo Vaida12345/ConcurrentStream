@@ -17,9 +17,13 @@ final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream where SourceS
     @usableFromInline
     let store = Store()
     
+    @usableFromInline
+    let cancel: @Sendable () -> Void
+    
     @inlinable
-    init(source: consuming SourceStream) {
+    init(source: SourceStream) {
         self.source = source
+        self.cancel = source.cancel
     }
     
     @inlinable
@@ -34,13 +38,6 @@ final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream where SourceS
         } catch {
             self.cancel()
             throw error
-        }
-    }
-    
-    @inlinable
-    nonisolated var cancel: @Sendable () -> Void {
-        { [_cancel = source.cancel] in
-            _cancel()
         }
     }
     

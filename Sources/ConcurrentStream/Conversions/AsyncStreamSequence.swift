@@ -15,6 +15,15 @@ public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence, S
     @usableFromInline
     let source: SourceStream
     
+    /// Cancels the upstreams of this async sequence.
+    ///
+    /// After bridging a `stream` to a `AsyncSequence`, the ways in which the `stream` can be cancelled is reduced. Nevertheless, the underlying stream can be cancelled in the following ways.
+    /// - Releasing reference to the `AsyncSequence`. (Cancellation in `deinit`)
+    /// - Calling this method explicitly.
+    ///
+    /// If the this sequence is once again transform into another `AsyncSequence`. You could only rely on the error thrown on task cancelation. After the error is thrown, the contents in the closure is released, calling cancellation in `deinit`.
+    public let cancel: @Sendable () -> Void
+    
     /// Creates the iterator.
     ///
     /// - Warning: Similar to `taskGroup`, you should only call this function once, either explicitly or implicitly.
@@ -24,27 +33,13 @@ public final class AsyncConcurrentStreamSequence<SourceStream>: AsyncSequence, S
     }
     
     @inlinable
-    public init(source: consuming SourceStream) {
+    init(source: SourceStream) {
         self.source = source
+        self.cancel = source.cancel
     }
     
     
-    /// Cancels the upstreams of this async sequence.
-    ///
-    /// After bridging a `stream` to a `AsyncSequence`, the ways in which the `stream` can be cancelled is reduced. Nevertheless, the underlying stream can be cancelled in the following ways.
-    /// - Releasing reference to the `AsyncSequence`. (Cancellation in `deinit`)
-    /// - Calling this method explicitly.
-    ///
-    /// If the this sequence is once again transform into another `AsyncSequence`. You could only rely on the error thrown on task cancelation. After the error is thrown, the contents in the closure is released, calling cancellation in `deinit`.
-    @inlinable
-    public nonisolated var cancel: @Sendable () -> Void {
-        { [_cancel = source.cancel] in
-            _cancel()
-        }
-    }
-    
-    
-    public final class AsyncIterator: AsyncIteratorProtocol {
+    public final class AsyncIterator: AsyncIteratorProtocol, Sendable {
         
         @usableFromInline
         let source: SourceStream

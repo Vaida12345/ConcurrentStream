@@ -35,7 +35,7 @@ internal extension Tag {
     
 }
 
-@Suite("Concurrent Stream", .serialized)
+@Suite("Concurrent Stream")
 struct ConcurrentStreamTests {
     
     @Test("Sequence", .tags(.conversion))
@@ -60,6 +60,14 @@ struct ConcurrentStreamTests {
     func testsAsyncSequence() async {
         let sequence = [Int](0...100).shuffled()
         let async = try! await sequence.stream.async.stream.sequence
+        #expect(sequence == async)
+    }
+    
+    @Test("AsyncIterator", .tags(.conversion))
+    @available(macOS 15, *)
+    func testsAsyncIterator() async {
+        let sequence = [Int](0...100).shuffled()
+        let async = try! await sequence.stream.async.makeAsyncIterator().stream.sequence
         #expect(sequence == async)
     }
     

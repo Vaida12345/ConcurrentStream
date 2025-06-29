@@ -13,6 +13,9 @@ actor ConcurrentSequenceStream<Source>: ConcurrentStream where Source: Sequence,
     @usableFromInline
     var iterator: Source.Iterator
     
+    @usableFromInline
+    let cancel: @Sendable () -> Void = {} // do nothing
+    
     @inlinable
     init(source: consuming Source) {
         self.iterator = source.makeIterator()
@@ -21,12 +24,6 @@ actor ConcurrentSequenceStream<Source>: ConcurrentStream where Source: Sequence,
     @inlinable
     func next() -> sending Element? {
         iterator.next()
-    }
-    
-    @inlinable
-    nonisolated var cancel: @Sendable () -> Void {
-        // do nothing
-        return {}
     }
     
     @usableFromInline
