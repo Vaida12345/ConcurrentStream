@@ -59,13 +59,6 @@ extension ConcurrentStream {
     ///   - rhs: Another stream to be iterated at the end of current stream.
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
-    ///
-    /// ## Topics
-    /// ### Variants
-    /// These variants are implementation details, which are employed to ensure the proper throwing.
-    /// - ``ConcurrentStream/+(_:_:)-25x9z``
-    /// - ``ConcurrentStream/+(_:_:)-8aocz``
-    /// - ``ConcurrentStream/+(_:_:)-4p98m``
     @inlinable
     public static func + (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, some Error>) -> some ConcurrentStream<Element, any Error> {
         ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
@@ -73,8 +66,6 @@ extension ConcurrentStream {
     
     // MARK: (lhs: some Error, rhs: Never)
     /// Creates a new stream by concatenating the elements of two streams.
-    ///
-    /// This is a variant of ``ConcurrentStream/+(_:_:)-7m6k2``
     @inlinable
     public static func + (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, Never>) -> some ConcurrentStream<Element, Failure> {
         ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
@@ -87,8 +78,6 @@ extension ConcurrentStream where Failure == Never {
     
     // MARK: (lhs: Never, rhs: some Error)
     /// Creates a new stream by concatenating the elements of two streams.
-    ///
-    /// This is a variant of ``ConcurrentStream/+(_:_:)-7m6k2``
     @inlinable
     public static func +<E> (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, E>) -> some ConcurrentStream<Element, E> where E: Error {
         ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)
@@ -96,8 +85,6 @@ extension ConcurrentStream where Failure == Never {
     
     // MARK: (lhs: some Error, rhs: Never)
     /// Creates a new stream by concatenating the elements of two streams.
-    ///
-    /// This is a variant of ``ConcurrentStream/+(_:_:)-7m6k2``
     @inlinable
     public static func + (_ lhs: consuming Self, _ rhs: consuming some ConcurrentStream<Element, Never>) -> some ConcurrentStream<Element, Never> {
         ConcurrentSerializedStream(lhs: consume lhs, rhs: consume rhs)

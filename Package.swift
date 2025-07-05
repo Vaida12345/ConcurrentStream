@@ -13,6 +13,9 @@ let package = Package(
         .visionOS(.v2)
     ], products: [
         .library(name: "ConcurrentStream", targets: ["ConcurrentStream"]),
+    ], dependencies: [
+//        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
+//        $swift package generate-documentation --enable-experimental-overloaded-symbol-presentation --target ConcurrentStream
     ], targets: [
         .target(name: "ConcurrentStream"),
         .executableTarget(name: "Client", dependencies: ["ConcurrentStream"]),

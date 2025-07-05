@@ -51,7 +51,7 @@
 ///
 /// There are generally two kinds of operations:
 ///
-/// - ``map(_:)-4q8b6``-like, where a `taskGroup` is created and dispatched upon invocation.
+/// - ``map(_:)``-like, where a `taskGroup` is created and dispatched upon invocation.
 /// - ``compacted()``-like, where a `taskGroup` is not generated. These operations are lightweight and do not involve additional overhead associated with being `async`.
 ///
 /// In the first scenario, unavoidable overhead arises from the use of `AsyncStream` to capture the results of the `taskGroup` and the `taskGroup` itself. Therefore, it is advisable to minimize the number of `map`-like operations queued.
@@ -84,7 +84,7 @@
 ///
 /// ## Throwing
 ///
-/// In ``map(_:)-4q8b6``-like closure, it should only throw when one needs to cancel the pending operations and throw the error, which will be captured in
+/// In ``map(_:)``-like closure, it should only throw when one needs to cancel the pending operations and throw the error, which will be captured in
 ///
 /// ```swift
 /// while let next = try await stream.next
@@ -137,22 +137,22 @@
 ///
 /// - ``compacted()``
 /// - ``unique()``
-/// - ``flatten()-3mp1s``
-/// - ``+(_:_:)-7m6k2``
+/// - ``flatten()``
+/// - ``+(_:_:)``
 ///
 ///
 /// ### Mappings
 /// These operations involve creation of `taskGroup` in each function call.
 ///
-/// - ``map(_:)-4q8b6``
-/// - ``compactMap(_:)-8yxjm``
-/// - ``flatMap(_:)-6o6er``
+/// - ``map(_:)``
+/// - ``compactMap(_:)``
+/// - ``flatMap(_:)``
 ///
 ///
 /// ### Excluding Elements
 /// Note that there is no way to retrieve the excluded elements. These operation themselves are lightweight.
 ///
-/// - ``filter(_:)-5v6w8``
+/// - ``filter(_:)``
 public protocol ConcurrentStream<Element, Failure>: Sendable {
     
     /// Returns the next element in the iterator.
@@ -168,7 +168,7 @@ public protocol ConcurrentStream<Element, Failure>: Sendable {
     ///
     /// As a `taskGroup` waits for all of its child tasks to complete before returning, the `taskGroup` used in the iterator is detached. Hence manual task cancelation is required.
     ///
-    /// - Note: Due to the nature of concurrency, if the closure does not implement checking cancelation, the submitted tasks to ``ConcurrentStream/map(_:)-4q8b6``-like streams cannot be cancelled until these closure finish.
+    /// - Note: Due to the nature of concurrency, if the closure does not implement checking cancelation, the submitted tasks to ``ConcurrentStream/map(_:)``-like streams cannot be cancelled until these closure finish.
     ///
     /// ### Conditions
     ///
@@ -178,14 +178,14 @@ public protocol ConcurrentStream<Element, Failure>: Sendable {
     /// - Calling ``ConcurrentStream/cancel`` explicitly.
     ///
     /// The task is also cancelled automatically when:
-    /// - An error is thrown in the closure (``ConcurrentStream/map(_:)-4q8b6``-like).
+    /// - An error is thrown in the closure (``ConcurrentStream/map(_:)``-like).
     /// - Child streams are cancelled. (Note: This only goes up, not down)
     /// - Task is cancelled during a bridge method, such as ``ConcurrentStream/sequence``. With the exception of ``ConcurrentStream/async``, which must be cancelled manually.
     ///
     /// ### Behaviors
     ///
     /// After the task is cancelled, successive calls to ``ConcurrentStream/next()`` depends on its origin. The stream itself does not store the state of whether it has been cancelled.
-    /// - If it does not evolve ``ConcurrentStream/map(_:)-4q8b6``-like: The method is unaffected, why would it be?
+    /// - If it does not evolve ``ConcurrentStream/map(_:)``-like: The method is unaffected, why would it be?
     /// - Otherwise this method would return anything left in the buffer, and `nil` in subsequence calls.
     ///
     /// ### Use cases

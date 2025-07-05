@@ -32,24 +32,7 @@ extension ConcurrentStream {
     /// ### Lightweight Equivalent
     /// The lightweight equivalent performs much better when transformation is not required.
     ///
-    /// - ``ConcurrentStream/flatten()-3mp1s``
-    ///
-    /// ### Variants
-    /// These variants are implementation details, which are employed to ensure the proper throwing.
-    /// - ``ConcurrentStream/flatMap(_:)-706tc``
-    /// - ``ConcurrentStream/flatMap(_:)-4cwmq``
-    /// - ``ConcurrentStream/flatMap(_:)-cdyd``
-    /// - ``ConcurrentStream/flatMap(_:)-6ewvc``
-    /// - ``ConcurrentStream/flatMap(_:)-32c9d``
-    /// - ``ConcurrentStream/flatMap(_:)-4khfb``
-    /// - ``ConcurrentStream/flatMap(_:)-5gccl``
-    ///
-    /// ### Sequence Variant
-    /// The following is used to ensure the capability with `Sequence`
-    /// - ``ConcurrentStream/flatMap(_:)-1kd8x``
-    /// - ``ConcurrentStream/flatMap(_:)-9hxei``
-    /// - ``ConcurrentStream/flatMap(_:)-j1vb``
-    /// - ``ConcurrentStream/flatMap(_:)-7f9w5``
+    /// - ``ConcurrentStream/flatten()``
     @inlinable
     public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> sending some ConcurrentStream<T, any Error>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).flatten()
@@ -57,8 +40,6 @@ extension ConcurrentStream {
     
     // MARK: (SourceStream.Failure: some Error, TransformFailure: some Error, ChildStreamError: Never)
     /// Creates a concurrent stream that flat maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
     public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> sending some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).flatten()
@@ -66,8 +47,6 @@ extension ConcurrentStream {
     
     // MARK: (SourceStream.Failure: some Error, TransformFailure: Never, ChildStreamError: some Error)
     /// Creates a concurrent stream that flat maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
     public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending some ConcurrentStream<T, some Error>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).flatten()
@@ -75,8 +54,6 @@ extension ConcurrentStream {
     
     // MARK: (SourceStream.Failure: some Error, TransformFailure: Never, ChildStreamError: Never)
     /// Creates a concurrent stream that flat maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
     public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, Failure> {
         await self.map(transform).flatten()
@@ -89,8 +66,6 @@ extension ConcurrentStream where Failure == Never {
     
     // MARK: (SourceStream.Failure: Never, TransformFailure: some Error, ChildStreamError: some Error)
     /// Creates a concurrent stream that flat maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
     public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> sending some ConcurrentStream<T, some Error>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).flatten()
@@ -98,8 +73,6 @@ extension ConcurrentStream where Failure == Never {
     
     // MARK: (SourceStream.Failure: Never, TransformFailure: some Error, ChildStreamError: Never)
     /// Creates a concurrent stream that flat maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
     public consuming func flatMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, E> where E: Error {
         await self.map(transform).flatten()
@@ -107,8 +80,6 @@ extension ConcurrentStream where Failure == Never {
     
     // MARK: (SourceStream.Failure: Never, TransformFailure: Never, ChildStreamError: some Error)
     /// Creates a concurrent stream that flat maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
     public consuming func flatMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async -> sending some ConcurrentStream<T, E>) async -> some ConcurrentStream<T, E> where E: Error {
         await self.map(transform).flatten()
@@ -116,8 +87,6 @@ extension ConcurrentStream where Failure == Never {
     
     // MARK: (SourceStream.Failure: Never, TransformFailure: Never, ChildStreamError: Never)
     /// Creates a concurrent stream that flat maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
     public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending some ConcurrentStream<T, Never>) async -> some ConcurrentStream<T, Never> {
         await self.map(transform).flatten()
@@ -132,8 +101,6 @@ extension ConcurrentStream {
     
     // MARK: (SourceStream.Failure: some Error, TransformFailure: some Error)
     /// Creates a concurrent stream that flat maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
     public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async throws -> sending some Sequence<T>) async -> some ConcurrentStream<T, any Error> {
         await self.map(transform).flatten()
@@ -141,8 +108,6 @@ extension ConcurrentStream {
     
     // MARK: (SourceStream.Failure: some Error, TransformFailure: Never)
     /// Creates a concurrent stream that flat maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``'
     @inlinable
     public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending some Sequence<T>) async -> some ConcurrentStream<T, Failure> {
         await self.map(transform).flatten()
@@ -155,8 +120,6 @@ extension ConcurrentStream where Failure == Never {
     
     // MARK: (SourceStream.Failure: Never, TransformFailure: some Error)
     /// Creates a concurrent stream that flat maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
     public consuming func flatMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending some Sequence<T>) async -> some ConcurrentStream<T, E> {
         await self.map(transform).flatten()
@@ -164,8 +127,6 @@ extension ConcurrentStream where Failure == Never {
     
     // MARK: (SourceStream.Failure: Never, TransformFailure: Never)
     /// Creates a concurrent stream that flat maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/flatMap(_:)-6o6er``
     @inlinable
     public consuming func flatMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending some Sequence<T>) async -> some ConcurrentStream<T, Never> {
         await self.map(transform).flatten()

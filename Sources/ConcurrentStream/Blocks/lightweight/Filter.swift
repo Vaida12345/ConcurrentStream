@@ -68,13 +68,6 @@ extension ConcurrentStream {
     /// - Important: There is **no way** to retrieve the discarded elements. A stream is not copyable. (Although in this implementation, it is copy-by-reference.)
     ///
     /// - Complexity: This method does not involve the creation of a new `taskGroup`.
-    ///
-    /// ## Topics
-    /// ### Variants
-    /// These variants are implementation details, which are employed to ensure the proper throwing.
-    /// - ``ConcurrentStream/filter(_:)-16976``
-    /// - ``ConcurrentStream/filter(_:)-35xli``
-    /// - ``ConcurrentStream/filter(_:)-2kl80``
     @inlinable
     public consuming func filter(_ isIncluded: @Sendable @escaping (Element) async throws -> Bool) -> some ConcurrentStream<Element, any Error> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
@@ -82,8 +75,6 @@ extension ConcurrentStream {
     
     // MARK: (SourceStream.Failure: some Error, isIncluded: Never)
     /// Returns an stream containing, in order, the elements of the stream that satisfy the given predicate.
-    ///
-    /// This is a variant of ``ConcurrentStream/filter(_:)-5v6w8``
     @inlinable
     public consuming func filter(_ isIncluded: @Sendable @escaping (Element) async -> Bool) -> some ConcurrentStream<Element, Failure> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
@@ -97,8 +88,6 @@ extension ConcurrentStream where Failure == Never {
     // MARK: (SourceStream.Failure: Never, isIncluded: some Error)
     // FIXME: Currently not called, swift choose to use the first one instead.
     /// Returns an stream containing, in order, the elements of the stream that satisfy the given predicate.
-    ///
-    /// This is a variant of ``ConcurrentStream/filter(_:)-5v6w8``
     @inlinable
     public consuming func filter<E>(_ isIncluded: @Sendable @escaping (Element) async throws(E) -> Bool) -> some ConcurrentStream<Element, E> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)
@@ -106,8 +95,6 @@ extension ConcurrentStream where Failure == Never {
     
     // MARK: (SourceStream.Failure: Never, isIncluded: Never)
     /// Returns an stream containing, in order, the elements of the stream that satisfy the given predicate.
-    ///
-    /// This is a variant of ``ConcurrentStream/filter(_:)-5v6w8``
     @inlinable
     public consuming func filter(_ isIncluded: @Sendable @escaping (Element) async -> Bool) -> some ConcurrentStream<Element, Never> {
         ConcurrentFilterStream(source: consume self, isIncluded: isIncluded)

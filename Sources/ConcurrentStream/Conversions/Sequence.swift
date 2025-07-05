@@ -53,7 +53,6 @@ extension Sequence where Element: Sendable, Self: Sendable {
     /// ## Topics
     /// ### See Also
     /// - ``_Concurrency/AsyncSequence/stream``
-    /// - ``Foundation/NSEnumerator/stream(of:)``
     @inlinable
     public var stream: some ConcurrentStream<Element, Never> {
         consuming get {

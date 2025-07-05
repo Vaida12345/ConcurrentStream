@@ -21,8 +21,7 @@ The `heavyWork`s are executed in parallel, while the completed ones are reported
 `ConcurrentStream` uses [Swift Package Manager](https://www.swift.org/documentation/package-manager/) as its build tool. If you want to import in your own project, it's as simple as adding a `dependencies` clause to your `Package.swift`:
 ```swift
 dependencies: [
-    .package(name: "ConcurrentStream", 
-             path: "https://www.github.com/Vaida12345/ConcurrentStream")
+    .package(url: "https://www.github.com/Vaida12345/ConcurrentStream", from: "1.0.1")
 ]
 ```
 and then adding the appropriate module to your target dependencies.

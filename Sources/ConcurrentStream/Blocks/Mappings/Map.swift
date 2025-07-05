@@ -66,6 +66,10 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
                 parentCancelable()
             }
         }
+        
+        continuation.onTermination = { _ in
+            self.cancel()
+        }
     }
     
     @inlinable
@@ -201,14 +205,6 @@ extension ConcurrentStream {
     /// > *Please also note that this benchmark could be inaccurate due to the nature of concurrency.*
     ///
     /// - Note: With `Synchronization`, the `next` method can be safely evoked in any thread.
-    ///
-    /// ## Topics
-    /// ### Variants
-    /// These variants are implementation details, which are employed to ensure the proper throwing.
-    ///
-    /// - ``ConcurrentStream/map(_:)-o7b9``
-    /// - ``ConcurrentStream/map(_:)-4rkgy``
-    /// - ``ConcurrentStream/map(_:)-8qjns``
     @inlinable
     public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending T) async -> some ConcurrentStream<T, any Error> where E: Error {
         await ConcurrentMapStream<T, Self, any Error, E>(source: self, work: transform) // self cannot be consumed
@@ -216,8 +212,6 @@ extension ConcurrentStream {
     
     // MARK: (SourceStream.Failure: some Error, TransformFailure: Never)
     /// Creates a concurrent stream that maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/map(_:)-4q8b6``
     @inlinable
     public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending T) async -> some ConcurrentStream<T, Failure> {
         await ConcurrentMapStream<T, Self, Failure, Never>(source: self, work: transform) // self cannot be consumed
@@ -231,8 +225,6 @@ extension ConcurrentStream where Failure == Never {
     
     // MARK: (SourceStream.Failure: Never, TransformFailure: some Error)
     /// Creates a concurrent stream that maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/map(_:)-4q8b6``
     @inlinable
     public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending T) async -> some ConcurrentStream<T, E> where E: Error {
         await ConcurrentMapStream<T, Self, E, E>(source: self, work: transform)
@@ -240,8 +232,6 @@ extension ConcurrentStream where Failure == Never {
     
     // MARK: (SourceStream.Failure: Never, TransformFailure: Never)
     /// Creates a concurrent stream that maps the given closure over the stream’s elements.
-    ///
-    /// This is a variant of ``ConcurrentStream/map(_:)-4q8b6``
     @inlinable
     public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending T) async -> some ConcurrentStream<T, Never> where Failure == Never {
         await ConcurrentMapStream(source: self, work: transform) // self cannot be consumed
