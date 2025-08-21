@@ -72,8 +72,8 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
             }
         }
         
-        continuation.onTermination = { [weak self] _ in
-            self?.cancel()
+        continuation.onTermination = { [_cancel = self.cancel] _ in
+            _cancel()
         }
     }
     
