@@ -3,7 +3,7 @@ import Foundation
 import ConcurrentStream
 
 let date = Date()
-let stream = (0...1000000).stream.map { $0 }
+let stream = await (0...1000000).stream.map { $0 }
 let _ = await stream.sequence
 print(date.distance(to: Date()))
 

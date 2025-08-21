@@ -33,7 +33,7 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
     
     
     @inlinable
-    init(source: consuming sending SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async throws(TransformFailure) -> sending Element) {
+    init(source: consuming sending SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async throws(TransformFailure) -> sending Element) async {
         self.parentCancelable = source.cancel
         let (_stream, continuation) = AsyncThrowingStream.makeStream(of: Word.self)
         self.store = Store()
@@ -206,15 +206,15 @@ extension ConcurrentStream {
     ///
     /// - Note: With `Synchronization`, the `next` method can be safely evoked in any thread.
     @inlinable
-    public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending T) -> some ConcurrentStream<T, any Error> where E: Error {
-        ConcurrentMapStream<T, Self, any Error, E>(source: self, work: transform) // self cannot be consumed
+    public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending T) async -> some ConcurrentStream<T, any Error> where E: Error {
+        await ConcurrentMapStream<T, Self, any Error, E>(source: self, work: transform) // self cannot be consumed
     }
     
     // MARK: (SourceStream.Failure: some Error, TransformFailure: Never)
     /// Creates a concurrent stream that maps the given closure over the stream’s elements.
     @inlinable
-    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending T) -> some ConcurrentStream<T, Failure> {
-        ConcurrentMapStream<T, Self, Failure, Never>(source: self, work: transform) // self cannot be consumed
+    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending T) async -> some ConcurrentStream<T, Failure> {
+        await ConcurrentMapStream<T, Self, Failure, Never>(source: self, work: transform) // self cannot be consumed
     }
     
 }
@@ -226,15 +226,15 @@ extension ConcurrentStream where Failure == Never {
     // MARK: (SourceStream.Failure: Never, TransformFailure: some Error)
     /// Creates a concurrent stream that maps the given closure over the stream’s elements.
     @inlinable
-    public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending T) -> some ConcurrentStream<T, E> where E: Error {
-        ConcurrentMapStream<T, Self, E, E>(source: self, work: transform)
+    public consuming func map<T, E>(_ transform: @Sendable @escaping (Self.Element) async throws(E) -> sending T) async -> some ConcurrentStream<T, E> where E: Error {
+        await ConcurrentMapStream<T, Self, E, E>(source: self, work: transform)
     }
     
     // MARK: (SourceStream.Failure: Never, TransformFailure: Never)
     /// Creates a concurrent stream that maps the given closure over the stream’s elements.
     @inlinable
-    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending T) -> some ConcurrentStream<T, Never> where Failure == Never {
-        ConcurrentMapStream(source: self, work: transform) // self cannot be consumed
+    public consuming func map<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending T) async -> some ConcurrentStream<T, Never> where Failure == Never {
+        await ConcurrentMapStream(source: self, work: transform) // self cannot be consumed
     }
     
 }
