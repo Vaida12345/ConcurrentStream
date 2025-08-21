@@ -35,7 +35,7 @@ internal extension Tag {
     
 }
 
-@Suite("Concurrent Stream")
+@Suite("Concurrent Stream", .serialized)
 struct ConcurrentStreamTests {
     
     @Test("Sequence", .tags(.conversion))

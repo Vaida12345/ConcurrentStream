@@ -11,7 +11,7 @@ import Foundation
 #if canImport(Testing)
 import Testing
 
-@Suite("Concurrent Stream Throwing", .tags(.throwing))
+@Suite("Concurrent Stream Throwing", .tags(.throwing), .serialized)
 struct ConcurrentStreamThrowingTests {
     
     @Test

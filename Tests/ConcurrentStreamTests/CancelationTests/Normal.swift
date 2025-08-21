@@ -8,13 +8,13 @@ import Synchronization
 import Testing
 
 /// The new tests are forgiving on the test results, the counter could be off by over 50. However, the test results should be accurate, as enough sleep time was given.
-@Suite("Normal Cancelation Tests", .tags(.cancelation))
+@Suite("Normal Cancelation Tests", .tags(.cancelation), .serialized)
 struct NormalCancellationTests {
     
     // The stream is deallocated when the task is cancelled, hence the life time of the closure ended, calling cancelation in deinit.
     @available(macOS 15.0, *)
     @Test(.tags(.cancelationByReleasingReference))
-    func deinitCancel() async throws {
+    nonisolated func deinitCancel() async throws {
         let counter = Atomic<Int>(0)
         let task = Task.detached {
             let stream = await (1...upperBound).stream.map { _ in
@@ -26,7 +26,7 @@ struct NormalCancellationTests {
         }
         
         while counter.load(ordering: .sequentiallyConsistent) == 0 {
-            heavyJob()
+            try await Task.sleep(for: .microseconds(1))
         }
         
         task.cancel() // on cancel, would cause the sleep to return, hence task is returned, stream is released.
