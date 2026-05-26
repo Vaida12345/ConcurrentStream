@@ -29,12 +29,10 @@ final class ConcurrentUniqueStream<SourceStream>: ConcurrentStream where SourceS
     @inlinable
     func next() async throws(Failure) -> sending Element? {
         do {
-            guard let next = try await source.next() else { return nil }
-            if await self.store.insert(next) {
-                return next
+            while let next = try await source.next() {
+                if await self.store.insert(next) { return next }
             }
-            
-            return try await self.next()
+            return nil
         } catch {
             self.cancel()
             throw error

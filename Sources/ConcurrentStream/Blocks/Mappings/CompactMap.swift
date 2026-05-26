@@ -57,7 +57,7 @@ extension ConcurrentStream where Failure == Never {
     // MARK: (SourceStream.Failure: Never, TransformFailure: Never)
     /// Creates a concurrent stream that compact maps the given closure over the stream’s elements.
     @inlinable
-    public consuming func compactMap<T, E>(_ transform: @Sendable @escaping (Self.Element) async -> sending Optional<T>) async -> some ConcurrentStream<T, Never> {
+    public consuming func compactMap<T>(_ transform: @Sendable @escaping (Self.Element) async -> sending Optional<T>) async -> some ConcurrentStream<T, Never> {
         await self.map(transform).compacted()
     }
     

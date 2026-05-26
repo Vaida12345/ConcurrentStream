@@ -6,8 +6,6 @@
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
-import Foundation
-
 
 @usableFromInline
 final class ConcurrentFilterStream<SourceStream, Failure>: ConcurrentStream where SourceStream: ConcurrentStream, Failure: Error {
@@ -32,12 +30,10 @@ final class ConcurrentFilterStream<SourceStream, Failure>: ConcurrentStream wher
     @inlinable
     func next() async throws(Failure) -> sending Element? {
         do {
-            guard let next = try await source.next() else { return nil }
-            if try await isIncluded(next) {
-                return next
+            while let next = try await source.next() {
+                if try await isIncluded(next) { return next }
             }
-            
-            return try await self.next()
+            return nil
         } catch {
             self.cancel()
             throw error as! Failure

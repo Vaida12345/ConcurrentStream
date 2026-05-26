@@ -81,7 +81,7 @@ extension ConcurrentStream {
     ///
     /// - throws: This function could throw ``Failure``, `E`, or `CancelationError`.
     @inlinable
-    public func forEach<E>(_ body: @escaping @Sendable (_ index: Int, _ element: Element) async throws(E) -> Void) async throws(any Error) where E: Error {
+    public func forEach(_ body: @escaping @Sendable (_ index: Int, _ element: Element) async throws -> Void) async throws {
         do {
             try await withThrowingDiscardingTaskGroup { group in
                 var index = 0
@@ -90,7 +90,6 @@ extension ConcurrentStream {
                     
                     await Task.yield()
                     guard group.addTaskUnlessCancelled(priority: nil, operation: {
-                        await Task.yield()
                         try Task.checkCancellation()
                         
                         try await body(_index, next)

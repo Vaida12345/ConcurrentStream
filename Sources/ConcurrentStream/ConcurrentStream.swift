@@ -26,7 +26,7 @@
 /// - Creation of a stream dispatches the work and returns immediately.
 /// - ``ConcurrentStream/next()`` would wait for the work to complete.
 ///
-/// - Warning: A stream is fragile, elements are discarded during traversal. Hence do never reuse a stream.
+/// - Warning: A stream is single-use. Elements are consumed during traversal and cannot be retrieved again. Creating a stream dispatches work immediately; calling ``next()`` consumes elements in order. Never reuse a stream — once ``next()`` returns `nil`, the stream is exhausted.
 ///
 /// ### Usage
 ///
@@ -65,7 +65,7 @@
 ///
 /// This protocol is a class protocol, due to the fact that
 /// - A class protocol has a `deinit` block, where the task can be cancelled.
-/// - A class protocol has non-next, making the following way of cancelation possible:
+/// - A class protocol has a `nonisolated` cancel property, making the following way of cancelation possible:
 /// ```swift
 /// let stream = some ConcurrentStream
 /// let cancel = stream.cancel
@@ -153,7 +153,7 @@
 /// Note that there is no way to retrieve the excluded elements. These operation themselves are lightweight.
 ///
 /// - ``filter(_:)``
-public protocol ConcurrentStream<Element, Failure>: Sendable {
+public protocol ConcurrentStream<Element, Failure>: Sendable, AnyObject {
     
     /// Returns the next element in the iterator.
     ///

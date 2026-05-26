@@ -30,18 +30,15 @@ final class ConcurrentFlattenStream<SourceStream, Failure, ChildFailure>: Concur
     @inlinable
     func next() async throws(Failure) -> sending Element? {
         do {
-            if let next = try await store.next() {
-                return next
+            while true {
+                if let next = try await store.next() {
+                    return next
+                }
+                guard let nextStream = try await source.next() else {
+                    return nil
+                }
+                await self.store.replace(stream: nextStream)
             }
-            
-            // the current stream is drain, get next one
-            guard let nextStream = try await source.next() else {
-                // no next stream, exit
-                return nil
-            }
-            
-            await self.store.replace(stream: nextStream)
-            return try await self.next()
         } catch {
             self.cancel()
             throw error as! Failure

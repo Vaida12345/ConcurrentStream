@@ -96,7 +96,8 @@ struct NormalCancellationTests {
         nonisolated(unsafe)
         var stream: (any ConcurrentStream<Void, Never>)? = nil
         
-        Task.detached {
+        @Sendable
+        func taskBody() async {
             stream = await (1...upperBound).stream.map { _ in
                 heavyJob()
                 counter.add(1, ordering: .sequentiallyConsistent)
@@ -107,6 +108,8 @@ struct NormalCancellationTests {
             
             // the stream lives outside, and should not be deallocated due to release of reference.
         }
+        
+        Task.detached(operation: taskBody)
         
         while counter.load(ordering: .sequentiallyConsistent) == 0 {
             heavyJob()
@@ -130,7 +133,7 @@ struct NormalCancellationTests {
         nonisolated(unsafe)
         var stream: (any ConcurrentStream<Void, Never>)? = nil
         
-        let task = Task.detached {
+        @Sendable func taskBody() async {
             await withTaskCancellationHandler {
                 stream = await (1...upperBound).stream.map { _ in
                     heavyJob()
@@ -146,6 +149,8 @@ struct NormalCancellationTests {
             
             // the stream lives outside, and should not be deallocated due to release of reference.
         }
+        
+        let task = Task(operation: taskBody)
         
         while counter.load(ordering: .sequentiallyConsistent) == 0 {
             heavyJob()

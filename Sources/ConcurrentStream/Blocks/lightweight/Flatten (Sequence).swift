@@ -29,18 +29,15 @@ final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream wher
     @inlinable
     func next() async throws(Failure) -> sending Element? {
         do {
-            if let next = await self.store.next() {
-                return next
+            while true {
+                if let next = await self.store.next() {
+                    return next
+                }
+                guard let nextStream = try await source.next() else {
+                    return nil
+                }
+                await self.store.replace(stream: nextStream)
             }
-            
-            // the current stream is drain, get next one
-            guard let nextStream = try await source.next() else {
-                // no next stream, exit
-                return nil
-            }
-            
-            await self.store.replace(stream: nextStream)
-            return try await self.next()
         } catch {
             self.cancel()
             throw error
@@ -62,8 +59,9 @@ final class ConcurrentSequenceFlattenStream<SourceStream>: ConcurrentStream wher
         
         @inlinable
         func next() -> sending Element? {
-            let removed = self.stream?.next()
-            return removed.map(\.self) // workaround: shallow copy to trick compiler to think it is detached from memory. This is safe nevertheless, as `self` no longer has access to `removed`.
+            // This is safe, as `self` no longer has access to `removed`.
+            nonisolated(unsafe) let removed = self.stream?.next()
+            return removed
         }
         
         @inlinable

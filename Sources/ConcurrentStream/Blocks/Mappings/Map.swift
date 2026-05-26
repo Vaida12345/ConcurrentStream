@@ -6,32 +6,34 @@
 //  Copyright © 2019 - 2024 Vaida. All rights reserved.
 //
 
+import Synchronization
+
 
 /// The primary associative values are: The returned element, The source stream, the error that this stream throws, the error that the work closure throws.
 @usableFromInline
 final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure>: ConcurrentStream where SourceStream: ConcurrentStream, TransformFailure: Error, Failure: Error {
-    
+
     /// The source stream cancelable
     @usableFromInline
     let parentCancelable: @Sendable () -> Void
-    
+
     /// The continuation of AsyncThrowingStream, used for cancelation.
     @usableFromInline
     let continuation: AsyncThrowingStream<Word, any Error>.Continuation
-    
-    
+
+
     @usableFromInline
     let store: Store
-    
+
     /// The task containing the `TaskGroup`
     @usableFromInline
     let task: Task<Void, any Error>
-    
+
     /// The iterator of `taskGroup`
     @usableFromInline
     nonisolated(unsafe) var iterator: AsyncThrowingStream<Word, any Error>.Iterator
-    
-    
+
+
     @inlinable
     init(source: consuming sending SourceStream, work: @Sendable @escaping (_: SourceStream.Element) async throws(TransformFailure) -> sending Element) async {
         self.parentCancelable = source.cancel
@@ -39,20 +41,20 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
         self.store = Store()
         self.iterator = _stream.makeAsyncIterator()
         self.continuation = continuation
-        
+
         self.task = Task.detached { [parentCancelable = source.cancel] in
             do {
                 try await withThrowingDiscardingTaskGroup { group in
                     var count = 0
                     while let value = try await source.next() {
                         let _count = count
-                        
+
                         await Task.yield()
-                        
+
                         guard group.addTaskUnlessCancelled(priority: nil, operation: {
                             await Task.yield()
                             try Task.checkCancellation()
-                            
+
                             do {
                                 let result = try await work(value)
                                 continuation.yield(Word(_count, result))
@@ -61,7 +63,7 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
                                 parentCancelable() // throwing will stop the task.
                             }
                         }) else { throw CancellationError() }
-                        
+
                         count &+= 1
                     }
                 }
@@ -71,34 +73,28 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
                 parentCancelable()
             }
         }
-        
-        continuation.onTermination = { [_cancel = self.cancel] _ in
-            _cancel()
-        }
     }
-    
+
     @inlinable
     deinit {
         self.cancel()
     }
-    
+
     /// Access the next element in the stream. `wait`ing is built-in.
     @inlinable
     func next() async throws(Failure) -> sending Element? {
         do {
-            while await store.currentIndexIsMissing {
+            while store.currentIndexIsMissing {
                 try Task.checkCancellation()
-                
-                let next = try await self.iterator.next()
-                
-                guard try await store.next(next: next) else {
-                    return nil
-                } // the only place where `nil` is returned, other than `CancellationError`.
+
+                let word = try await self.iterator.next()
+                guard let word else { return nil }
+                store.insert(word)
             }
-            
-            let removed = await self.store.removeValue()
-            await self.store.increment()
-            
+
+            let removed = store.removeValue()
+            store.increment()
+
             return removed
         } catch is CancellationError {
             self.cancel()
@@ -108,7 +104,7 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
             throw error as! Failure
         }
     }
-    
+
     @inlinable
     nonisolated var cancel: @Sendable () -> Void {
         { [_taskCancel = self.task.cancel, _cancel = parentCancelable, _finish = continuation.finish] in
@@ -117,60 +113,46 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
             _finish(CancellationError())
         }
     }
-    
+
     /// The Internal stored word
     @usableFromInline
     typealias Word = (Int, Element)
-    
+
     @usableFromInline
-    actor Store {
-        
-        /// The buffer for retaining pending values.
+    final class Store: @unchecked Sendable {
+
         @usableFromInline
-        var buffer: [Int : Element] = [:]
-        
-        /// The index for the next element to produce in `next()`
-        @usableFromInline
-        var index = 0
-        
+        let _lock = Mutex<(buffer: [Int : Element], index: Int)>((buffer: [:], index: 0))
+
         @inlinable
-        init() {
-            
-        }
-        
+        init() { }
+
         @inlinable
         var currentIndexIsMissing: Bool {
-            self.buffer[self.index] == nil
+            _lock.withLock { $0.buffer[$0.index] == nil }
         }
-        
+
         @inlinable
-        func updateValue(_ value: Element, forKey key: Int) {
-            self.buffer.updateValue(value, forKey: key)
+        func insert(_ word: Word) {
+            _lock.withLock { _ = $0.buffer.updateValue(word.1, forKey: word.0) }
         }
-        
+
         @inlinable
-        func removeValue() -> sending Element? {
-            let removed = self.buffer.removeValue(forKey: self.index)
-            return removed.map(\.self) // workaround: shallow copy to trick compiler to think it is detached from memory. This is safe nevertheless, as `self` no longer has access to `removed`.
-        }
-        
-        @inlinable
-        func increment() {
-            self.index += 1
-        }
-        
-        @inlinable
-        func next(next: Word?) async throws -> Bool {
-            if let next {
-                self.updateValue(next.1, forKey: next.0)
-                return true
-            } else {
-                return false
+        func removeValue() -> Element? {
+            _lock.withLock {
+                // This is safe, as `self` no longer has access to `removed`.
+                nonisolated(unsafe) let removed = $0.buffer.removeValue(forKey: $0.index)
+                return removed
             }
         }
-        
+
+        @inlinable
+        func increment() {
+            _lock.withLock { $0.index += 1 }
+        }
+
     }
-    
+
 }
 
 

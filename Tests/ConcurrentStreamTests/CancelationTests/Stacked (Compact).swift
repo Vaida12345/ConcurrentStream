@@ -95,7 +95,7 @@ struct CompactCancellationTests {
         nonisolated(unsafe)
         var stream: (any ConcurrentStream<Void, Never>)? = nil
         
-        let task = Task.detached {
+        @Sendable func taskBody() async {
             await withTaskCancellationHandler {
                 stream = await (1...upperBound).stream.map { _ in
                     heavyJob()
@@ -111,6 +111,8 @@ struct CompactCancellationTests {
             
             // the stream lives outside, and should not be deallocated due to release of reference.
         }
+        
+        let task = Task(operation: taskBody)
         
         while counter.load(ordering: .sequentiallyConsistent) == 0 {
             heavyJob()

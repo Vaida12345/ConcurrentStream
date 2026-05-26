@@ -26,13 +26,10 @@ final class ConcurrentCompactedStream<Unwrapped, SourceStream>: ConcurrentStream
     @inlinable
     func next() async throws(Failure) -> sending Element? {
         do {
-            guard let next = try await source.next() else { return nil } // reaches end
-            if let next {
-                // unwraps `next`
-                return next
-            } else {
-                return try await self.next()
+            while let next = try await source.next() {
+                if let next { return next }
             }
+            return nil
         } catch {
             self.cancel()
             throw error
