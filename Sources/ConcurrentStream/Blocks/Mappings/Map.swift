@@ -115,7 +115,6 @@ final class ConcurrentMapStream<Element, SourceStream, Failure, TransformFailure
             _taskCancel()
             _cancel()
             _finish(CancellationError())
-            print("calling cancel")
         }
     }
     
