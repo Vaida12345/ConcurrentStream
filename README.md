@@ -62,7 +62,7 @@ for i in (1...10) {
 
 With arguably similar performance.
 
-**To read more about choice and implementation details, see [Principle](https://vaida12345.github.io/ConcurrentStream/documentation/concurrentstream/principle)**
+**To read more about choice and implementation details, see [Principle](https://vaida12345.github.io/ConcurrentStream/documentation/concurrentstream/principle)**.
 
 ### Typed Throws
 
