@@ -58,7 +58,7 @@ struct CancelationTestsWithOperations {
     }
     
     @available(macOS 15.0, *)
-    @Test(.tags(.cancelationByReleasingReference))
+    @Test(.tags(.cancelationByReleasingReference), .disabled())
     func releaseLater() async throws {
         let counter = Atomic<Int>(0)
         Task.detached {

@@ -226,4 +226,4 @@ await withTaskGroup(of: Int.self) { taskGroup in
 
 Similar results can be found for double `map`s.
 
-- Bug: However, there is a ~0.4ms overhead of using concurrent stream iterator.
+- Experiment: However, there is a ~0.4ms overhead of using concurrent stream iterator.

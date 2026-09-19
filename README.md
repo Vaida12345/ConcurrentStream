@@ -30,7 +30,7 @@ https://github.com/Vaida12345/ConcurrentStream.git
 ```
 
 ## Documentation
-Full documentation available as DocC ([View raw ConcurrentStream documentation](/Sources/ConcurrentStream/Documentation.docc/ConcurrentStream.md)).
+Full documentation available as DocC, view on [Github](https://vaida12345.github.io/ConcurrentStream/documentation/concurrentstream).
 
 ## Implementation Details
 
@@ -38,15 +38,15 @@ Full documentation available as DocC ([View raw ConcurrentStream documentation](
 
 As the name suggests, the package provides a stream, not a sequence. Which means that you cannot iterate using `for`-loop. However, you could
 - use `stream.next()`
-- use `stream.sequence` to convert it into a sequence. The `seqeunce` method would wait for all elements to present before returning.
+- use `stream.sequence` to convert it into a sequence. The `sequence` method would wait for all elements to present before returning.
 - use `stream.async` to convert it into an async sequence. This method returns immediately, and new elements can be obtained using `for await`.
 
 > Important:
 > A stream is fragile, elements are discarded during traversal. Hence do never reuse a stream. (Similar to `TaskGroup`)
 
-### Eazy conversion
+### Integration
 
-This framework also offers eazy ways to convert between stream and sequence. For example,
+This framework also offers easy ways to convert between stream and sequence. For example,
 ```swift
 for i in await (1...10).stream.sequence {
     print(i)
@@ -62,7 +62,7 @@ for i in (1...10) {
 
 With arguably similar performance.
 
-**To read more about choice and implementation details, see [Principle](/Sources/ConcurrentStream/Documentation.docc/Principle.md)**
+**To read more about choice and implementation details, see [Principle](https://vaida12345.github.io/ConcurrentStream/documentation/concurrentstream/principle)**
 
 ### Typed Throws
 
